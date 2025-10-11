@@ -153,7 +153,7 @@ const HeroSection = () => {
           transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
         >
           <Link
-            to="/order"
+            to="/menu"
             className="group relative overflow-hidden bg-gradient-to-r from-red-700 to-red-600 text-white px-8 py-4 rounded-lg text-lg font-semibold uppercase tracking-wide transition-all duration-300 hover:shadow-lg hover:shadow-red-600/30 hover:scale-105"
           >
             <span className="relative z-10 flex items-center">

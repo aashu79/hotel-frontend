@@ -202,7 +202,7 @@ const Navbar = ({
 
             {/* Primary CTA Button */}
             <Link
-              to="/order"
+              to="/menu"
               className="bg-red-700 hover:bg-red-600 text-white px-5 py-2 rounded-md font-medium ml-4 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-700/30"
             >
               Order Now
@@ -212,7 +212,7 @@ const Navbar = ({
           {/* Mobile order button */}
           <div className="lg:hidden">
             <Link
-              to="/order"
+              to="/menu"
               className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium transition-all duration-300"
             >
               Order
@@ -349,7 +349,7 @@ const Navbar = ({
               {/* Bottom CTA Button */}
               <div className="p-6 border-t border-white/10 mt-auto">
                 <Link
-                  to="/order"
+                  to="/menu"
                   className="block w-full bg-red-700 hover:bg-red-600 text-white py-3 rounded-md font-semibold text-center transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
