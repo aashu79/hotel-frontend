@@ -6,26 +6,21 @@ import "react-phone-number-input/style.css";
 import {
   ArrowRight,
   Check,
+  Loader2,
   AlertCircle,
   CheckCircle2,
-  Loader2,
   ArrowLeft,
-  User,
-  Phone,
   Globe,
-  FileText,
-  ShieldCheck,
 } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { registerSchema, otpSchema } from "../lib/validations/auth";
+import { loginSchema, otpSchema } from "../lib/validations/auth";
 import useAuthStore from "../store/authStore";
 import { useToast } from "../components/ui/use-toast";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
 
-interface RegistrationFormData {
-  name: string;
+interface LoginFormData {
   phoneNumber: string;
 }
 
@@ -33,12 +28,12 @@ interface OtpFormData {
   otp: string;
 }
 
-const SignUp: React.FC = () => {
+const SignIn: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const {
-    sendRegisterOtp,
-    verifyRegisterOtp,
+    sendLoginOtp,
+    verifyLoginOtp,
     isLoading,
     error: storeError,
     clearError,
@@ -46,15 +41,7 @@ const SignUp: React.FC = () => {
   } = useAuthStore();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [tempData, setTempData] = useState<{
-    name: string;
-    phoneNumber: string;
-  }>({
-    name: "",
-    phoneNumber: "",
-  });
-
-  // UI top-level inline success message
+  const [tempPhoneNumber, setTempPhoneNumber] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
 
   // Redirect if already logged in
@@ -70,16 +57,13 @@ const SignUp: React.FC = () => {
     return () => clearError();
   }, [step, clearError]);
 
-  // Registration form
-  const registrationForm = useForm<RegistrationFormData>({
-    resolver: yupResolver(registerSchema),
+  const loginForm = useForm<LoginFormData>({
+    resolver: yupResolver(loginSchema),
     defaultValues: {
-      name: "",
       phoneNumber: "",
     },
   });
 
-  // OTP verification form
   const otpForm = useForm<OtpFormData>({
     resolver: yupResolver(otpSchema),
     defaultValues: {
@@ -87,9 +71,14 @@ const SignUp: React.FC = () => {
     },
   });
 
-  const [verificationCode, setVerificationCode] = useState<string[]>(
-    new Array(6).fill("")
-  );
+  const [verificationCode, setVerificationCode] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
 
   const handleChangeVerificationCode = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -98,14 +87,11 @@ const SignUp: React.FC = () => {
     newVerificationCode[index] = value;
     setVerificationCode(newVerificationCode);
 
-    const completeOtp = newVerificationCode.join("");
+    const completeOtp = [...newVerificationCode].join("");
     otpForm.setValue("otp", completeOtp);
 
-    // auto focus next
     if (value !== "" && index < 5) {
-      const nextInput = document.getElementById(
-        `code-${index + 1}`
-      ) as HTMLInputElement | null;
+      const nextInput = document.getElementById(`code-${index + 1}`);
       if (nextInput) nextInput.focus();
     }
   };
@@ -115,9 +101,7 @@ const SignUp: React.FC = () => {
     e: React.KeyboardEvent<HTMLInputElement>
   ) => {
     if (e.key === "Backspace" && verificationCode[index] === "" && index > 0) {
-      const prevInput = document.getElementById(
-        `code-${index - 1}`
-      ) as HTMLInputElement | null;
+      const prevInput = document.getElementById(`code-${index - 1}`);
       if (prevInput) prevInput.focus();
     }
   };
@@ -134,47 +118,34 @@ const SignUp: React.FC = () => {
       }
 
       setVerificationCode(newVerificationCode);
+
       const completeOtp = newVerificationCode.join("");
       otpForm.setValue("otp", completeOtp);
 
       if (digits.length < 6) {
-        const nextInput = document.getElementById(
-          `code-${digits.length}`
-        ) as HTMLInputElement | null;
+        const nextInput = document.getElementById(`code-${digits.length}`);
         if (nextInput) nextInput.focus();
       }
     }
   };
 
-  const onSubmitRegistration = async (data: RegistrationFormData) => {
+  const onSubmitLogin = async (data: LoginFormData) => {
     clearError();
     setSuccessMessage("");
 
     try {
-      const success = await sendRegisterOtp(data.name, data.phoneNumber);
+      const success = await sendLoginOtp(data.phoneNumber);
 
       if (success) {
-        setTempData({ name: data.name, phoneNumber: data.phoneNumber });
+        setTempPhoneNumber(data.phoneNumber);
         setSuccessMessage("OTP sent successfully! Check your phone.");
-        toast({
-          title: "OTP Sent",
-          description: "Please check your phone for the verification code.",
-          className: "bg-zinc-900 border border-zinc-700 text-white",
-        });
-        // small delay for UX animation then move to step 2
         setTimeout(() => {
           clearError(); // Clear any errors before changing step
           setStep(2);
-        }, 450);
+        }, 500);
       }
-    } catch (err) {
-      // error from storeError will be displayed inline
-      toast({
-        variant: "destructive",
-        title: "Failed to send OTP",
-        description: storeError || "Please try again later",
-        className: "bg-zinc-900 border border-red-500/50 text-white",
-      });
+    } catch (error) {
+      // Error handled by storeError
     }
   };
 
@@ -183,48 +154,23 @@ const SignUp: React.FC = () => {
     setSuccessMessage("");
 
     try {
-      const success = await verifyRegisterOtp(tempData.phoneNumber, data.otp);
+      const success = await verifyLoginOtp(tempPhoneNumber, data.otp);
 
       if (success) {
-        setSuccessMessage("Registration successful! Redirecting...");
-        toast({
-          title: "Registration successful",
-          description: "Welcome! Redirecting to homepage.",
-          className: "bg-zinc-900 border border-green-500/50 text-white",
-        });
-        // small delay to give user feedback
-        setTimeout(() => navigate("/"), 900);
+        setSuccessMessage("Login successful! Redirecting...");
+        setTimeout(() => navigate("/"), 1000);
       }
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Verification failed",
-        description: storeError || "Invalid OTP. Please try again.",
-        className: "bg-zinc-900 border border-red-500/50 text-white",
-      });
+    } catch (error) {
+      // Error handled by storeError
     }
   };
 
   const resendOTP = async () => {
-    if (tempData.name && tempData.phoneNumber) {
+    if (tempPhoneNumber) {
       clearError();
       setSuccessMessage("");
-      try {
-        await sendRegisterOtp(tempData.name, tempData.phoneNumber);
-        setSuccessMessage("OTP resent! Check your phone.");
-        toast({
-          title: "OTP Resent",
-          description: "A new verification code has been sent to your phone.",
-          className: "bg-zinc-900 border border-green-500/50 text-white",
-        });
-      } catch {
-        toast({
-          variant: "destructive",
-          title: "Could not resend OTP",
-          description: storeError || "Please try again later",
-          className: "bg-zinc-900 border border-red-500/50 text-white",
-        });
-      }
+      await sendLoginOtp(tempPhoneNumber);
+      setSuccessMessage("OTP resent! Check your phone.");
     }
   };
 
@@ -242,9 +188,9 @@ const SignUp: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-black px-4 py-16 sm:py-20 md:py-24 relative overflow-hidden">
       {/* Background gradients */}
       <div aria-hidden="true" className="absolute inset-0 z-0">
-        <div className="absolute top-0 -right-10 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px] opacity-70"></div>
-        <div className="absolute bottom-0 -left-10 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px] opacity-70"></div>
-        <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-[100px] opacity-50"></div>
+        <div className="absolute top-0 -right-10 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[100px] opacity-70"></div>
+        <div className="absolute bottom-0 -left-10 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-[100px] opacity-70"></div>
+        <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] opacity-50"></div>
       </div>
 
       {/* Content wrapper */}
@@ -263,7 +209,7 @@ const SignUp: React.FC = () => {
             className="overflow-hidden bg-gradient-to-b from-zinc-900/95 to-black backdrop-blur-lg border border-zinc-800/80 rounded-2xl shadow-2xl shadow-black/40"
           >
             {/* Top accent line */}
-            <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-red-500"></div>
+            <div className="h-1 w-full bg-gradient-to-r from-red-500 via-purple-500 to-blue-500"></div>
 
             <div className="p-6 sm:p-8">
               {/* Form Header */}
@@ -279,12 +225,22 @@ const SignUp: React.FC = () => {
                   transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
                   className="mx-auto w-16 h-16 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-2xl flex items-center justify-center shadow-lg border border-zinc-700/60"
                 >
-                  <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    {step === 1 ? (
-                      <User className="h-5 w-5 text-white" />
-                    ) : (
-                      <ShieldCheck className="h-5 w-5 text-white" />
-                    )}
+                  <div className="w-9 h-9 bg-gradient-to-r from-red-500/90 to-red-600 rounded-full flex items-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-white"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
                   </div>
                 </motion.div>
 
@@ -294,7 +250,7 @@ const SignUp: React.FC = () => {
                   transition={{ delay: 0.3, duration: 0.4 }}
                   className="mt-4 text-2xl font-bold text-white"
                 >
-                  {step === 1 ? "Create Account" : "Verify Your Number"}
+                  {step === 1 ? "Sign In" : "Verify Your Identity"}
                 </motion.h2>
                 <motion.p
                   initial={{ opacity: 0 }}
@@ -303,8 +259,8 @@ const SignUp: React.FC = () => {
                   className="mt-1.5 text-sm text-zinc-400 font-medium"
                 >
                   {step === 1
-                    ? "Join Himalayan Restro to explore premium food"
-                    : `Enter the verification code sent to ${tempData.phoneNumber}`}
+                    ? "Welcome back to Himalayan Restro"
+                    : `Enter the verification code sent to ${tempPhoneNumber}`}
                 </motion.p>
               </motion.div>
 
@@ -336,7 +292,7 @@ const SignUp: React.FC = () => {
                     <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <p className="text-red-200 text-sm font-medium">
-                        Registration Error
+                        Authentication Failed
                       </p>
                       <p className="text-red-300/90 text-xs mt-1">
                         {storeError}
@@ -350,71 +306,26 @@ const SignUp: React.FC = () => {
               <AnimatePresence mode="wait">
                 {step === 1 ? (
                   <motion.div
-                    key="registration"
+                    key="login"
                     variants={slideVariants}
                     initial="hidden"
                     animate="visible"
                     exit="exit"
                   >
                     <form
-                      onSubmit={registrationForm.handleSubmit(
-                        onSubmitRegistration
-                      )}
+                      onSubmit={loginForm.handleSubmit(onSubmitLogin)}
                       className="space-y-5"
                     >
                       <div className="space-y-2.5">
                         <label
-                          htmlFor="name"
-                          className="flex items-center gap-2 text-sm font-medium text-zinc-300"
-                        >
-                          <User size={14} className="text-zinc-400" />
-                          Full Name
-                        </label>
-                        <div className="relative">
-                          <input
-                            {...registrationForm.register("name")}
-                            type="text"
-                            id="name"
-                            className={cn(
-                              "block w-full px-4 py-3 rounded-xl bg-zinc-800/70 border text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/40 transition-colors",
-                              registrationForm.formState.errors.name
-                                ? "border-red-500/50 bg-red-900/10"
-                                : "border-zinc-700/60"
-                            )}
-                            placeholder="Enter your full name"
-                          />
-                          {registrationForm.formState.errors.name && (
-                            <motion.p
-                              initial={{ opacity: 0, y: -4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="mt-1.5 text-sm text-red-400 flex items-center gap-1.5"
-                            >
-                              <AlertCircle
-                                size={14}
-                                className="flex-shrink-0"
-                              />
-                              <span>
-                                {
-                                  registrationForm.formState.errors.name
-                                    ?.message
-                                }
-                              </span>
-                            </motion.p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2.5">
-                        <label
                           htmlFor="phone"
-                          className="flex items-center gap-2 text-sm font-medium text-zinc-300"
+                          className="block text-sm font-medium text-zinc-300"
                         >
-                          <Phone size={14} className="text-zinc-400" />
                           Phone Number
                         </label>
                         <div className="relative enhanced-phone-input-wrapper">
                           <Controller
-                            control={registrationForm.control}
+                            control={loginForm.control}
                             name="phoneNumber"
                             render={({ field }) => (
                               <PhoneInput
@@ -428,7 +339,7 @@ const SignUp: React.FC = () => {
                           />
                           <div className="phone-input-highlight"></div>
                         </div>
-                        {registrationForm.formState.errors.phoneNumber && (
+                        {loginForm.formState.errors.phoneNumber && (
                           <motion.p
                             initial={{ opacity: 0, y: -4 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -436,70 +347,40 @@ const SignUp: React.FC = () => {
                           >
                             <AlertCircle size={14} className="flex-shrink-0" />
                             <span>
-                              {
-                                registrationForm.formState.errors.phoneNumber
-                                  ?.message
-                              }
+                              {loginForm.formState.errors.phoneNumber.message}
                             </span>
                           </motion.p>
                         )}
                       </div>
 
-                      <div className="pt-2">
-                        <Button
-                          type="submit"
-                          disabled={isLoading}
-                          className="w-full flex items-center justify-center py-2.5 border border-transparent text-base font-semibold rounded-xl shadow-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              Sending OTP...
-                            </>
-                          ) : (
-                            <>
-                              Continue <ArrowRight className="ml-2" size={18} />
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                      <Button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full flex items-center justify-center py-2.5 mt-3 border border-transparent text-base font-semibold rounded-xl shadow-lg text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Sending OTP...
+                          </>
+                        ) : (
+                          <>
+                            Continue <ArrowRight className="ml-2" size={18} />
+                          </>
+                        )}
+                      </Button>
 
                       {/* Footer Links */}
                       <div className="mt-6 text-center">
                         <p className="text-sm text-zinc-400">
-                          Already have an account?{" "}
+                          Don't have an account?{" "}
                           <Link
-                            to="/signin"
-                            className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                            to="/signup"
+                            className="font-medium text-red-400 hover:text-red-300 transition-colors"
                           >
-                            Sign in
+                            Sign up
                           </Link>
                         </p>
-                      </div>
-
-                      <div className="mt-4 pt-4 border-t border-zinc-800/60">
-                        <div className="flex items-center gap-2 justify-center text-xs text-center text-zinc-500">
-                          <FileText
-                            size={12}
-                            className="flex-shrink-0 opacity-70"
-                          />
-                          <p>
-                            By signing up, you agree to our{" "}
-                            <a
-                              href="#"
-                              className="text-blue-400/80 hover:text-blue-300 underline-offset-2 hover:underline"
-                            >
-                              Terms of Service
-                            </a>{" "}
-                            and{" "}
-                            <a
-                              href="#"
-                              className="text-blue-400/80 hover:text-blue-300 underline-offset-2 hover:underline"
-                            >
-                              Privacy Policy
-                            </a>
-                          </p>
-                        </div>
                       </div>
                     </form>
                   </motion.div>
@@ -516,8 +397,10 @@ const SignUp: React.FC = () => {
                       className="space-y-5"
                     >
                       <div className="space-y-3">
-                        <label className="flex items-center gap-2 text-sm font-medium text-zinc-300">
-                          <ShieldCheck size={14} className="text-zinc-400" />
+                        <label
+                          htmlFor="otp"
+                          className="block text-sm font-medium text-zinc-300"
+                        >
                           Verification Code
                         </label>
 
@@ -547,7 +430,7 @@ const SignUp: React.FC = () => {
                                 }
                                 onKeyDown={(e) => handleKeyDown(index, e)}
                                 onPaste={handlePaste}
-                                className="w-full h-14 text-center text-xl font-bold rounded-lg bg-zinc-800/80 border border-zinc-700/80 text-white focus:border-blue-500/70 focus:ring-1 focus:ring-blue-500/50 focus:outline-none transition-all duration-200"
+                                className="w-full h-14 text-center text-xl font-bold rounded-lg bg-zinc-800/80 border border-zinc-700/80 text-white focus:border-red-500/70 focus:ring-1 focus:ring-red-500/50 focus:outline-none transition-all duration-200"
                               />
                               {digit && (
                                 <motion.div
@@ -556,7 +439,7 @@ const SignUp: React.FC = () => {
                                   animate={{ scale: 1, opacity: 1 }}
                                   className="absolute inset-0 flex items-center justify-center pointer-events-none"
                                 >
-                                  <div className="w-full h-0.5 bg-blue-500/40 rounded absolute bottom-3"></div>
+                                  <div className="w-full h-0.5 bg-red-500/40 rounded absolute bottom-3"></div>
                                 </motion.div>
                               )}
                             </motion.div>
@@ -584,7 +467,7 @@ const SignUp: React.FC = () => {
                           <button
                             type="button"
                             onClick={resendOTP}
-                            className="text-blue-400 hover:text-blue-300 font-semibold transition-colors focus:outline-none focus:underline"
+                            className="text-red-400 hover:text-red-300 font-semibold transition-colors focus:outline-none focus:underline"
                             disabled={isLoading}
                           >
                             Resend OTP
@@ -596,9 +479,10 @@ const SignUp: React.FC = () => {
                         <Button
                           type="submit"
                           disabled={
-                            isLoading || verificationCode.some((d) => d === "")
+                            isLoading ||
+                            verificationCode.some((digit) => !digit)
                           }
-                          className="w-full flex items-center justify-center py-2.5 border border-transparent text-base font-semibold rounded-xl shadow-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                          className="w-full flex items-center justify-center py-2.5 border border-transparent text-base font-semibold rounded-xl shadow-lg text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                         >
                           {isLoading ? (
                             <>
@@ -607,8 +491,7 @@ const SignUp: React.FC = () => {
                             </>
                           ) : (
                             <>
-                              Complete Registration{" "}
-                              <Check className="ml-2" size={18} />
+                              Sign In <Check className="ml-2" size={18} />
                             </>
                           )}
                         </Button>
@@ -618,12 +501,13 @@ const SignUp: React.FC = () => {
                           onClick={() => {
                             setStep(1);
                             clearError();
-                            setVerificationCode(new Array(6).fill(""));
+                            setSuccessMessage("");
+                            setVerificationCode(["", "", "", "", "", ""]);
                           }}
                           className="w-full py-2.5 border border-zinc-800 text-base font-medium rounded-xl text-zinc-300 bg-zinc-900/70 hover:bg-zinc-800/70 flex items-center justify-center gap-2 transition-colors"
                         >
                           <ArrowLeft size={16} />
-                          Back to registration
+                          Back to login
                         </Button>
                       </div>
                     </form>
@@ -666,7 +550,7 @@ const SignUp: React.FC = () => {
           left: 0;
           height: 2px;
           width: 100%;
-          background: linear-gradient(to right, #3b82f6, #8b5cf6);
+          background: linear-gradient(to right, #ef4444, #dc2626);
           opacity: 0;
           transition: opacity 200ms;
         }
@@ -684,7 +568,7 @@ const SignUp: React.FC = () => {
 
         .enhanced-phone-input:focus-within .PhoneInput {
           background: rgba(39, 39, 42, 0.7);
-          border-color: rgba(59, 130, 246, 0.5);
+          border-color: rgba(239, 68, 68, 0.5);
         }
 
         .phone-input-error .PhoneInput {
@@ -721,7 +605,7 @@ const SignUp: React.FC = () => {
         }
 
         .PhoneInputCountrySelect:focus + .PhoneInputCountryIcon {
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
           transform: scale(1.05);
         }
 
@@ -753,7 +637,7 @@ const SignUp: React.FC = () => {
         }
 
         .enhanced-phone-input:focus-within .PhoneInputCountrySelectArrow {
-          border-top-color: rgba(59, 130, 246, 0.8);
+          border-top-color: rgba(239, 68, 68, 0.8);
         }
 
         /* Phone Number Input */
@@ -793,4 +677,4 @@ const SignUp: React.FC = () => {
   );
 };
 
-export default SignUp;
+export default SignIn;

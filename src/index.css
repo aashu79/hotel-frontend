@@ -6,10 +6,6 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-deep-black text-white font-sans;
-  }
-
   h1,
   h2,
   h3,
@@ -170,4 +166,46 @@ html {
 .hover-underline:hover::after {
   transform: scaleX(1);
   transform-origin: bottom left;
+}
+
+/* Custom styles for react-phone-number-input */
+.PhoneInput {
+  display: flex;
+  align-items: center;
+}
+
+.PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  margin-right: 0.5rem;
+}
+
+.PhoneInputCountryIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.PhoneInputCountrySelectArrow {
+  margin-left: 0.3rem;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-style: solid;
+  border-color: #9ca3af;
+  border-width: 0 1px 1px 0;
+  transform: rotate(45deg);
+}
+
+.PhoneInputInput {
+  flex: 1;
+  min-width: 0;
+  background-color: transparent;
+  border: none;
+  color: white;
+  outline: none;
+}
+
+.PhoneInputInput::placeholder {
+  color: #9ca3af;
 }

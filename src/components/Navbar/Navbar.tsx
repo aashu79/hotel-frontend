@@ -10,6 +10,7 @@ import {
   FiChevronDown,
   FiUser,
 } from "react-icons/fi";
+import AuthButtons from "../Auth/AuthButtons";
 
 const Navbar = ({
   onMenuToggle,
@@ -191,14 +192,8 @@ const Navbar = ({
               label="Contact"
             />
 
-            {/* Sign In Button (replacing Reservations) */}
-            <Link
-              to="/signin"
-              className="flex items-center px-4 py-2 text-white hover:text-red-400 border border-white/20 rounded-md transition-all duration-200 hover:border-red-400"
-            >
-              <FiUser className="mr-2" />
-              <span>Sign In</span>
-            </Link>
+            {/* Auth Buttons */}
+            <AuthButtons />
 
             {/* Primary CTA Button */}
             <Link
@@ -268,6 +263,16 @@ const Navbar = ({
                   <MobileNavLink
                     to="/signin"
                     label="Sign In"
+                    onClick={() => setIsMenuOpen(false)}
+                  />
+                  <MobileNavLink
+                    to="/signup"
+                    label="Sign Up"
+                    onClick={() => setIsMenuOpen(false)}
+                  />
+                  <MobileNavLink
+                    to="/profile"
+                    label="My Profile"
                     onClick={() => setIsMenuOpen(false)}
                   />
                 </ul>

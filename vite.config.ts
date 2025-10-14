@@ -7,12 +7,14 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 4000,
     allowedHosts: [
-      'pseudoidentical-lacie-braggingly.ngrok-free.dev' // add your ngrok domain here
-    ]
+      "pseudoidentical-lacie-braggingly.ngrok-free.dev", // add your ngrok domain here
+    ],
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger()].filter(
+    Boolean
+  ),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
