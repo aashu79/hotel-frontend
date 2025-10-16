@@ -3,7 +3,8 @@ import axios from "axios";
 // Create axios instance with default config
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_URL || "https://hotel-backend-ifst.onrender.com",
+    // import.meta.env.VITE_API_URL || "https://hotel-backend-ifst.onrender.com",
+    "http://localhost:3000",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

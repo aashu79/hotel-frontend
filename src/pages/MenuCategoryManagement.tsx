@@ -95,7 +95,7 @@ const MenuCategoryManagement = () => {
     setLoading(true);
     try {
       const response = await api.get("/api/menu-categories");
-      setCategories(response.data);
+      setCategories(response?.data?.data || []);
     } catch (error) {
       message.error("Failed to fetch categories");
       console.error("Error fetching categories:", error);

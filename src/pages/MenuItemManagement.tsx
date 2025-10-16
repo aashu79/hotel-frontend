@@ -130,7 +130,7 @@ const MenuItemManagement = () => {
     setLoading(true);
     try {
       const response = await api.get("/api/menu-items");
-      setMenuItems(response.data);
+      setMenuItems(response?.data?.data || []);
     } catch (error) {
       message.error("Failed to fetch menu items");
       console.error("Error fetching menu items:", error);
@@ -143,7 +143,7 @@ const MenuItemManagement = () => {
   const fetchCategories = async () => {
     try {
       const response = await api.get("/api/menu-categories");
-      setCategories(response.data);
+      setCategories(response?.data?.data || []);
     } catch (error) {
       message.error("Failed to fetch categories");
       console.error("Error fetching categories:", error);
