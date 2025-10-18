@@ -1,261 +1,110 @@
-import { useState, useEffect } from "react";
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Switch,
-  Space,
-  message,
-  Popconfirm,
-  Upload,
-  Card,
-  Tag,
-  Select,
-} from "antd";
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  UploadOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table";
-import { useForm, Controller } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
+import { useState } from "react";
+import { Button, Modal, Input, Card, Select, message } from "antd";
+import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import DashboardLayout from "../layouts/DashboardLayout";
-import api from "../lib/axios";
 import type { UploadFile } from "antd/es/upload/interface";
-
-interface MenuItem {
-  id: number;
-  name: string;
-  description?: string;
-  price: number;
-  imageUrl?: string;
-  isVegetarian: boolean;
-  isAvailable: boolean;
-  prepTimeMins?: number;
-  sortOrder?: number;
-  categoryId: number;
-  category?: {
-    id: number;
-    name: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface MenuCategory {
-  id: number;
-  name: string;
-}
-
-interface MenuItemFormData {
-  name: string;
-  description?: string;
-  price: number;
-  isVegetarian: boolean;
-  isAvailable: boolean;
-  prepTimeMins?: number;
-  sortOrder?: number;
-  categoryId: number;
-}
-
-// Validation schema matching backend
-const menuItemSchema = yup.object({
-  name: yup.string().required("Item name is required"),
-  description: yup.string(),
-  price: yup
-    .number()
-    .required("Price is required")
-    .positive("Price must be greater than 0"),
-  isVegetarian: yup.boolean().default(false),
-  isAvailable: yup.boolean().default(true),
-  prepTimeMins: yup
-    .number()
-    .integer("Preparation time must be an integer")
-    .min(0, "Preparation time cannot be negative")
-    .transform((value, originalValue) =>
-      originalValue === "" ? undefined : value
-    ),
-  sortOrder: yup
-    .number()
-    .integer("Sort order must be an integer")
-    .transform((value, originalValue) =>
-      originalValue === "" ? undefined : value
-    ),
-  categoryId: yup
-    .number()
-    .required("Category is required")
-    .integer("Invalid category"),
-});
+import ItemList from "../components/MenuItemManagement/ItemList";
+import ItemForm from "../components/MenuItemManagement/ItemForm";
+import type {
+  MenuItem,
+  MenuCategory,
+  MenuItemFormData,
+} from "../components/MenuItemManagement/types";
+import {
+  useMenuItems,
+  useDeleteMenuItem,
+  useToggleMenuItemAvailability,
+  useToggleMenuItemVegetarian,
+  useCreateMenuItem,
+  useUpdateMenuItem,
+} from "../hooks/useMenuItems";
+import { useMenuCategories } from "../hooks/useMenuCategories";
 
 const MenuItemManagement = () => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string | number>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [searchText, setSearchText] = useState("");
-  const [filterCategory, setFilterCategory] = useState<number | "all">("all");
   const [imageFile, setImageFile] = useState<UploadFile | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: yupResolver(menuItemSchema) as any,
-    defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      isVegetarian: false,
-      isAvailable: true,
-      prepTimeMins: undefined,
-      sortOrder: undefined,
-      categoryId: 0,
-    },
-  });
+  // React Query hooks
+  const { data: menuItems = [], isLoading: itemsLoading } = useMenuItems();
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useMenuCategories();
+  const deleteMenuItem = useDeleteMenuItem();
+  const toggleAvailability = useToggleMenuItemAvailability();
+  const toggleVegetarian = useToggleMenuItemVegetarian();
+  const createMenuItem = useCreateMenuItem();
+  const updateMenuItem = useUpdateMenuItem();
 
-  // Fetch menu items
-  const fetchMenuItems = async () => {
-    setLoading(true);
+  const loading = itemsLoading || categoriesLoading;
+
+  // Handler functions
+  const handleOpenModal = (item?: MenuItem) => {
+    setEditingItem(item ?? null);
+    if (item?.imageUrl) {
+      setImagePreview(item.imageUrl);
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingItem(null);
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const handleDelete = async (id: number) => {
     try {
-      const response = await api.get("/api/menu-items");
-      setMenuItems(response?.data?.data || []);
+      await deleteMenuItem.mutateAsync(id);
     } catch (error) {
-      message.error("Failed to fetch menu items");
-      console.error("Error fetching menu items:", error);
-    } finally {
-      setLoading(false);
+      // Error handling is done in the hook
     }
   };
 
-  // Fetch categories
-  const fetchCategories = async () => {
+  const handleToggleAvailable = async (id: number) => {
     try {
-      const response = await api.get("/api/menu-categories");
-      setCategories(response?.data?.data || []);
+      await toggleAvailability.mutateAsync(id);
     } catch (error) {
-      message.error("Failed to fetch categories");
-      console.error("Error fetching categories:", error);
+      // Error handling is done in the hook
     }
   };
 
-  useEffect(() => {
-    fetchMenuItems();
-    fetchCategories();
-  }, []);
+  const handleToggleVeg = async (id: number) => {
+    try {
+      await toggleVegetarian.mutateAsync(id);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
 
-  // Handle form submission
-  const onSubmit = async (data: MenuItemFormData) => {
+  const handleFormSubmit = async (data: MenuItemFormData) => {
     try {
       const formData = new FormData();
-      formData.append("name", data.name);
-      if (data.description) formData.append("description", data.description);
-      formData.append("price", data.price.toString());
-      formData.append("isVegetarian", data.isVegetarian.toString());
-      formData.append("isAvailable", data.isAvailable.toString());
-      if (data.prepTimeMins !== undefined && data.prepTimeMins !== null) {
-        formData.append("prepTimeMins", data.prepTimeMins.toString());
-      }
-      if (data.sortOrder !== undefined && data.sortOrder !== null) {
-        formData.append("sortOrder", data.sortOrder.toString());
-      }
-      formData.append("categoryId", data.categoryId.toString());
-
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as string | Blob);
+        }
+      });
       if (imageFile?.originFileObj) {
         formData.append("image", imageFile.originFileObj);
       }
 
       if (editingItem) {
-        await api.put(`/api/menu-items/${editingItem.id}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        message.success("Menu item updated successfully");
+        await updateMenuItem.mutateAsync({ id: editingItem.id, formData });
       } else {
-        await api.post("/api/menu-items", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        message.success("Menu item created successfully");
+        await createMenuItem.mutateAsync(formData);
       }
-
       handleCloseModal();
-      fetchMenuItems();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || "Failed to save menu item");
-      console.error("Error saving menu item:", error);
+    } catch (error) {
+      // Error handling is done in the hook
     }
-  };
-
-  // Handle delete
-  const handleDelete = async (id: number) => {
-    try {
-      await api.delete(`/api/menu-items/${id}`);
-      message.success("Menu item deleted successfully");
-      fetchMenuItems();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(
-        err.response?.data?.message || "Failed to delete menu item"
-      );
-      console.error("Error deleting menu item:", error);
-    }
-  };
-
-  // Handle modal open for create/edit
-  const handleOpenModal = (item?: MenuItem) => {
-    if (item) {
-      setEditingItem(item);
-      reset({
-        name: item.name,
-        description: item.description || "",
-        price: item.price,
-        isVegetarian: item.isVegetarian,
-        isAvailable: item.isAvailable,
-        prepTimeMins: item.prepTimeMins || undefined,
-        sortOrder: item.sortOrder || undefined,
-        categoryId: item.categoryId,
-      });
-      setImagePreview(item.imageUrl || "");
-    } else {
-      setEditingItem(null);
-      reset({
-        name: "",
-        description: "",
-        price: 0,
-        isVegetarian: false,
-        isAvailable: true,
-        prepTimeMins: undefined,
-        sortOrder: undefined,
-        categoryId: categories[0]?.id || 0,
-      });
-      setImagePreview("");
-    }
-    setImageFile(null);
-    setIsModalOpen(true);
-  };
-
-  // Handle modal close
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingItem(null);
-    setImageFile(null);
-    setImagePreview("");
-    reset();
   };
 
   // Filter menu items
-  const filteredMenuItems = menuItems.filter((item) => {
+  const filteredMenuItems = menuItems?.data?.filter((item) => {
     const matchesSearch = item.name
       .toLowerCase()
       .includes(searchText.toLowerCase());
@@ -264,125 +113,6 @@ const MenuItemManagement = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Table columns
-  const columns: ColumnsType<MenuItem> = [
-    {
-      title: "Image",
-      dataIndex: "imageUrl",
-      key: "imageUrl",
-      width: 100,
-      render: (imageUrl: string) =>
-        imageUrl ? (
-          <img
-            src={imageUrl}
-            alt="Item"
-            style={{
-              width: "60px",
-              height: "60px",
-              objectFit: "cover",
-              borderRadius: "8px",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "60px",
-              height: "60px",
-              background: "#1e293b",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#64748b",
-              fontSize: "12px",
-            }}
-          >
-            No Image
-          </div>
-        ),
-    },
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-      title: "Category",
-      dataIndex: ["category", "name"],
-      key: "category",
-      render: (categoryName: string) => (
-        <Tag color="blue">{categoryName || "N/A"}</Tag>
-      ),
-    },
-    {
-      title: "Price",
-      dataIndex: "price",
-      key: "price",
-      width: 100,
-      sorter: (a, b) => a.price - b.price,
-      render: (price: number) => `₹${price}`,
-    },
-    {
-      title: "Type",
-      dataIndex: "isVegetarian",
-      key: "isVegetarian",
-      width: 100,
-      render: (isVegetarian: boolean) => (
-        <Tag color={isVegetarian ? "green" : "red"}>
-          {isVegetarian ? "Veg" : "Non-Veg"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "isAvailable",
-      key: "isAvailable",
-      width: 120,
-      render: (isAvailable: boolean) => (
-        <Tag color={isAvailable ? "green" : "orange"}>
-          {isAvailable ? "Available" : "Unavailable"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Prep Time",
-      dataIndex: "prepTimeMins",
-      key: "prepTimeMins",
-      width: 100,
-      render: (time?: number) => (time ? `${time} mins` : "-"),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 150,
-      render: (_: unknown, record: MenuItem) => (
-        <Space>
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => handleOpenModal(record)}
-            style={{ color: "#fb923c" }}
-          >
-            Edit
-          </Button>
-          <Popconfirm
-            title="Delete Menu Item"
-            description="Are you sure you want to delete this item?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
   return (
     <DashboardLayout>
       <div style={{ padding: "24px" }}>
@@ -390,6 +120,10 @@ const MenuItemManagement = () => {
           style={{
             background: "#0f172a",
             border: "1px solid #1e293b",
+            overflowX: "auto",
+            overflowY: "visible",
+            maxHeight: "calc(100vh - 100px)",
+            minWidth: 900,
           }}
         >
           {/* Header */}
@@ -452,7 +186,7 @@ const MenuItemManagement = () => {
               style={{ width: "200px" }}
             >
               <Select.Option value="all">All Categories</Select.Option>
-              {categories.map((cat) => (
+              {categories?.data?.map((cat) => (
                 <Select.Option key={cat.id} value={cat.id}>
                   {cat.name}
                 </Select.Option>
@@ -461,17 +195,20 @@ const MenuItemManagement = () => {
           </div>
 
           {/* Table */}
-          <Table
-            columns={columns}
-            dataSource={filteredMenuItems}
-            rowKey="id"
-            loading={loading}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showTotal: (total) => `Total ${total} items`,
-            }}
-          />
+          <div style={{ width: "100%", overflowX: "auto" }}>
+            <ItemList
+              items={filteredMenuItems}
+              loading={loading}
+              onEdit={handleOpenModal}
+              onDelete={handleDelete}
+              onToggleAvailable={handleToggleAvailable}
+              onToggleVeg={handleToggleVeg}
+              togglingAvailableId={
+                toggleAvailability.isPending ? undefined : null
+              }
+              togglingVegId={toggleVegetarian.isPending ? undefined : null}
+            />
+          </div>
         </Card>
 
         {/* Create/Edit Modal */}
@@ -485,262 +222,34 @@ const MenuItemManagement = () => {
           onCancel={handleCloseModal}
           footer={null}
           width={700}
+          bodyStyle={{ maxHeight: "70vh", overflowY: "auto", minWidth: 320 }}
+          style={{ top: 40 }}
         >
-          <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-              }}
-            >
-              {/* Name */}
-              <Form.Item
-                label="Item Name"
-                validateStatus={errors.name ? "error" : ""}
-                help={errors.name?.message}
-                required
-                style={{ gridColumn: "1 / -1" }}
-              >
-                <Controller
-                  name="name"
-                  control={control}
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      placeholder="e.g., Butter Chicken"
-                      size="large"
-                    />
-                  )}
-                />
-              </Form.Item>
-
-              {/* Category */}
-              <Form.Item
-                label="Category"
-                validateStatus={errors.categoryId ? "error" : ""}
-                help={errors.categoryId?.message}
-                required
-              >
-                <Controller
-                  name="categoryId"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      {...field}
-                      size="large"
-                      placeholder="Select category"
-                    >
-                      {categories.map((cat) => (
-                        <Select.Option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </Select.Option>
-                      ))}
-                    </Select>
-                  )}
-                />
-              </Form.Item>
-
-              {/* Price */}
-              <Form.Item
-                label="Price (₹)"
-                validateStatus={errors.price ? "error" : ""}
-                help={errors.price?.message}
-                required
-              >
-                <Controller
-                  name="price"
-                  control={control}
-                  render={({ field }) => (
-                    <InputNumber
-                      {...field}
-                      placeholder="0"
-                      style={{ width: "100%" }}
-                      min={0}
-                      step={10}
-                      size="large"
-                    />
-                  )}
-                />
-              </Form.Item>
-
-              {/* Prep Time */}
-              <Form.Item
-                label="Preparation Time (mins)"
-                validateStatus={errors.prepTimeMins ? "error" : ""}
-                help={errors.prepTimeMins?.message as string}
-              >
-                <Controller
-                  name="prepTimeMins"
-                  control={control}
-                  render={({ field }) => (
-                    <InputNumber
-                      {...field}
-                      placeholder="0"
-                      style={{ width: "100%" }}
-                      min={0}
-                      size="large"
-                    />
-                  )}
-                />
-              </Form.Item>
-
-              {/* Sort Order */}
-              <Form.Item
-                label="Sort Order"
-                validateStatus={errors.sortOrder ? "error" : ""}
-                help={errors.sortOrder?.message as string}
-              >
-                <Controller
-                  name="sortOrder"
-                  control={control}
-                  render={({ field }) => (
-                    <InputNumber
-                      {...field}
-                      placeholder="0"
-                      style={{ width: "100%" }}
-                      min={0}
-                      size="large"
-                    />
-                  )}
-                />
-              </Form.Item>
-            </div>
-
-            {/* Description */}
-            <Form.Item
-              label="Description"
-              validateStatus={errors.description ? "error" : ""}
-              help={errors.description?.message}
-            >
-              <Controller
-                name="description"
-                control={control}
-                render={({ field }) => (
-                  <Input.TextArea
-                    {...field}
-                    placeholder="Item description (optional)"
-                    rows={3}
-                  />
-                )}
-              />
-            </Form.Item>
-
-            {/* Image Upload */}
-            <Form.Item label="Item Image">
-              <Upload
-                listType="picture-card"
-                maxCount={1}
-                fileList={imageFile ? [imageFile] : []}
-                beforeUpload={(file) => {
-                  const isImage = file.type.startsWith("image/");
-                  if (!isImage) {
-                    message.error("You can only upload image files!");
-                    return false;
-                  }
-                  const isLt5M = file.size / 1024 / 1024 < 5;
-                  if (!isLt5M) {
-                    message.error("Image must be smaller than 5MB!");
-                    return false;
-                  }
-
-                  // Preview
-                  const reader = new FileReader();
-                  reader.onload = (e) => {
-                    setImagePreview(e.target?.result as string);
-                  };
-                  reader.readAsDataURL(file);
-
-                  setImageFile({
-                    uid: file.uid,
-                    name: file.name,
-                    status: "done",
-                    url: "",
-                    originFileObj: file,
-                  } as UploadFile);
-                  return false;
-                }}
-                onRemove={() => {
-                  setImageFile(null);
-                  setImagePreview("");
-                }}
-              >
-                {!imageFile && !imagePreview && (
-                  <div>
-                    <UploadOutlined />
-                    <div style={{ marginTop: 8 }}>Upload</div>
-                  </div>
-                )}
-              </Upload>
-              {imagePreview && !imageFile && (
-                <img
-                  src={imagePreview}
-                  alt="Current"
-                  style={{
-                    maxWidth: "200px",
-                    marginTop: "8px",
-                    borderRadius: "8px",
-                  }}
-                />
-              )}
-            </Form.Item>
-
-            {/* Switches */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-              }}
-            >
-              <Form.Item label="Vegetarian">
-                <Controller
-                  name="isVegetarian"
-                  control={control}
-                  render={({ field }) => (
-                    <Switch
-                      checked={field.value}
-                      onChange={field.onChange}
-                      checkedChildren="Yes"
-                      unCheckedChildren="No"
-                    />
-                  )}
-                />
-              </Form.Item>
-
-              <Form.Item label="Available">
-                <Controller
-                  name="isAvailable"
-                  control={control}
-                  render={({ field }) => (
-                    <Switch
-                      checked={field.value}
-                      onChange={field.onChange}
-                      checkedChildren="Yes"
-                      unCheckedChildren="No"
-                    />
-                  )}
-                />
-              </Form.Item>
-            </div>
-
-            {/* Submit Buttons */}
-            <Form.Item style={{ marginBottom: 0, marginTop: "24px" }}>
-              <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-                <Button onClick={handleCloseModal}>Cancel</Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  style={{
-                    background: "linear-gradient(135deg, #fb923c, #ea580c)",
-                    border: "none",
-                  }}
-                >
-                  {editingItem ? "Update Item" : "Create Item"}
-                </Button>
-              </Space>
-            </Form.Item>
-          </Form>
+          <div style={{ minWidth: 320 }}>
+            <ItemForm
+              initialValues={
+                editingItem
+                  ? {
+                      name: editingItem.name,
+                      description: editingItem.description,
+                      price: editingItem.price,
+                      isVegetarian: editingItem.isVegetarian,
+                      isAvailable: editingItem.isAvailable,
+                      prepTimeMins: editingItem.prepTimeMins,
+                      categoryId: editingItem.categoryId,
+                    }
+                  : undefined
+              }
+              categories={categories}
+              loading={createMenuItem.isPending || updateMenuItem.isPending}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCloseModal}
+              imageFile={imageFile}
+              setImageFile={setImageFile}
+              imagePreview={imagePreview}
+              setImagePreview={setImagePreview}
+            />
+          </div>
         </Modal>
       </div>
     </DashboardLayout>

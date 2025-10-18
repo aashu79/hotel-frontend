@@ -17,8 +17,12 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import DashboardLayout from "../layouts/DashboardLayout";
-import api from "../lib/axios";
 import type { UploadFile } from "antd/es/upload/interface";
+import {
+  useRestaurantConfig,
+  useUpdateRestaurantConfig,
+  useUpdateRestaurantConfigField,
+} from "../hooks/useRestaurant";
 
 interface RestaurantConfig {
   id: number;
@@ -78,9 +82,6 @@ const restaurantSchema = yup.object({
 });
 
 const RestaurantSettings = () => {
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [config, setConfig] = useState<RestaurantConfig | null>(null);
   const [logoFile, setLogoFile] = useState<UploadFile | null>(null);
   const [heroFile, setHeroFile] = useState<UploadFile | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
@@ -111,46 +112,36 @@ const RestaurantSettings = () => {
     },
   });
 
-  // Fetch restaurant config
-  const fetchConfig = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get("/api/restaurant/config");
-      const data = response.data;
-      setConfig(data);
-      reset({
-        name: data.name || "",
-        description: data.description || "",
-        address: data.address || "",
-        city: data.city || "",
-        state: data.state || "",
-        country: data.country || "India",
-        postalCode: data.postalCode || "",
-        phoneNumber: data.phoneNumber || "",
-        email: data.email || "",
-        website: data.website || "",
-        openingHours: data.openingHours || "",
-        isOpen: data.isOpen ?? true,
-        isBusy: data.isBusy ?? false,
-      });
-      setLogoPreview(data.logoUrl || "");
-      setHeroPreview(data.heroImageUrl || "");
-    } catch (error) {
-      message.error("Failed to fetch restaurant settings");
-      console.error("Error fetching config:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // React Query hooks
+  const { data: config, isLoading: loading } = useRestaurantConfig();
+  const updateConfig = useUpdateRestaurantConfig();
+  const updateConfigField = useUpdateRestaurantConfigField();
 
+  // Update form when config loads
   useEffect(() => {
-    fetchConfig();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (config) {
+      reset({
+        name: config.name || "",
+        description: config.description || "",
+        address: config.address || "",
+        city: config.city || "",
+        state: config.state || "",
+        country: config.country || "India",
+        postalCode: config.postalCode || "",
+        phoneNumber: config.phoneNumber || "",
+        email: config.email || "",
+        website: config.website || "",
+        openingHours: config.openingHours || "",
+        isOpen: config.isOpen ?? true,
+        isBusy: config.isBusy ?? false,
+      });
+      setLogoPreview(config.logoUrl || "");
+      setHeroPreview(config.heroImageUrl || "");
+    }
+  }, [config, reset]);
 
   // Handle form submission
   const onSubmit = async (data: RestaurantFormData) => {
-    setSaving(true);
     try {
       const formData = new FormData();
 
@@ -167,20 +158,11 @@ const RestaurantSettings = () => {
         formData.append("heroImage", heroFile.originFileObj);
       }
 
-      await api.put("/api/restaurant/config", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      message.success("Restaurant settings updated successfully");
-      fetchConfig();
+      await updateConfig.mutateAsync(formData);
       setLogoFile(null);
       setHeroFile(null);
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || "Failed to update settings");
-      console.error("Error updating settings:", error);
-    } finally {
-      setSaving(false);
+    } catch (error) {
+      // Error handling is done in the hook
     }
   };
 
@@ -190,12 +172,9 @@ const RestaurantSettings = () => {
     value: boolean
   ) => {
     try {
-      await api.put("/api/restaurant/config", { [field]: value });
-      message.success("Status updated successfully");
-      fetchConfig();
+      await updateConfigField.mutateAsync({ field, value });
     } catch (error) {
-      message.error("Failed to update status");
-      console.error("Error updating status:", error);
+      // Error handling is done in the hook
     }
   };
 
@@ -650,7 +629,7 @@ const RestaurantSettings = () => {
                 htmlType="submit"
                 size="large"
                 icon={<SaveOutlined />}
-                loading={saving}
+                loading={updateConfig.isPending}
                 style={{
                   background: "linear-gradient(135deg, #fb923c, #ea580c)",
                   border: "none",

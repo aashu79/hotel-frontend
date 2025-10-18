@@ -1,6 +1,13 @@
 import axios from "axios";
 
 // Create axios instance with default config
+const authStorage = localStorage.getItem("auth-storage");
+
+const authStorageObject = JSON.parse(authStorage);
+const token = authStorageObject?.state.token;
+
+console.log("Axios Token:", token);
+
 const api = axios.create({
   baseURL:
     // import.meta.env.VITE_API_URL || "https://hotel-backend-ifst.onrender.com",
@@ -8,6 +15,7 @@ const api = axios.create({
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
   },
 });
 
@@ -15,6 +23,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // You can add auth token here if needed
+
     return config;
   },
   (error) => {

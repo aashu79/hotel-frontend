@@ -1,0 +1,81 @@
+.rich-text-wrapper {
+  margin-bottom: 10px;
+}
+
+.quill,
+.dark-theme {
+  background: #1f2937;
+  border-radius: 4px;
+}
+
+.ql-container {
+  min-height: 100px;
+  border-color: #374151 !important;
+  background: #1f2937;
+}
+
+.ql-editor {
+  min-height: 100px;
+  color: white !important;
+  font-family: inherit;
+}
+
+.ql-toolbar {
+  background: #111827;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  border-color: #374151 !important;
+}
+
+/* Additional styling for links and placeholders */
+.ql-editor a {
+  color: #fb923c;
+}
+
+.ql-editor p {
+  color: white;
+}
+
+.ql-editor::before {
+  color: #64748b !important; /* Placeholder color */
+  font-style: italic;
+}
+
+/* Button styling */
+.ql-toolbar button {
+  color: white !important;
+}
+
+/* Toolbar buttons and icons */
+.ql-picker-label,
+.ql-picker-options {
+  color: white !important;
+}
+
+.ql-stroke {
+  stroke: white !important;
+}
+
+.ql-fill {
+  fill: white !important;
+}
+
+/* Dropdown menus */
+.ql-picker-options {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+/* Additional styling for different text states */
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3 {
+  color: white;
+}
+
+/* Lists */
+.ql-editor ol,
+.ql-editor ul,
+.ql-editor li {
+  color: white;
+}

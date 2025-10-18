@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   Table,
@@ -22,7 +22,12 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import DashboardLayout from "../layouts/DashboardLayout";
-import api from "../lib/axios";
+import {
+  useStaff,
+  useCreateStaff,
+  useUpdateStaff,
+  useDeleteStaff,
+} from "../hooks/useStaff";
 
 const { Option } = Select;
 
@@ -57,8 +62,6 @@ interface Staff {
 }
 
 const StaffManagement = () => {
-  const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
 
@@ -71,25 +74,11 @@ const StaffManagement = () => {
     resolver: yupResolver(staffSchema),
   });
 
-  // Fetch staff list
-  const fetchStaff = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get("/api/admin/staff", {
-        withCredentials: true,
-      });
-      setStaffList(response.data.data || []);
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || "Failed to fetch staff");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStaff();
-  }, []);
+  // React Query hooks
+  const { data: staffList = [], isLoading: loading } = useStaff();
+  const createStaff = useCreateStaff();
+  const updateStaff = useUpdateStaff();
+  const deleteStaff = useDeleteStaff();
 
   // Add or update staff
   const onSubmit = async (data: {
@@ -100,39 +89,43 @@ const StaffManagement = () => {
   }) => {
     try {
       if (editingStaff) {
-        // Update staff
-        await api.put(`/api/admin/staff/${editingStaff._id}`, data, {
-          withCredentials: true,
+        // Update staff - don't send password if empty
+        const updateData = { ...data };
+        if (!updateData.password) {
+          delete updateData.password;
+        }
+        await updateStaff.mutateAsync({
+          id: editingStaff._id,
+          data: updateData,
         });
-        message.success("Staff updated successfully");
       } else {
-        // Add new staff
-        await api.post("/api/auth/staff/register", data, {
-          withCredentials: true,
-        });
-        message.success("Staff added successfully");
+        // Add new staff - password is required
+        if (!data.password) {
+          message.error("Password is required for new staff members");
+          return;
+        }
+        await createStaff.mutateAsync(
+          data as {
+            name: string;
+            email: string;
+            password: string;
+            role: string;
+            phone?: string;
+          }
+        );
       }
-      fetchStaff();
       handleCloseModal();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(
-        err.response?.data?.message || "Failed to save staff member"
-      );
+    } catch (error) {
+      // Error handling is done in the hook
     }
   };
 
   // Delete staff
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/api/admin/staff/${id}`, {
-        withCredentials: true,
-      });
-      message.success("Staff deleted successfully");
-      fetchStaff();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || "Failed to delete staff");
+      await deleteStaff.mutateAsync(id);
+    } catch (error) {
+      // Error handling is done in the hook
     }
   };
 

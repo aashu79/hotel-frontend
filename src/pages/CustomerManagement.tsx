@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   Table,
@@ -17,7 +17,7 @@ import {
   MailOutlined,
 } from "@ant-design/icons";
 import DashboardLayout from "../layouts/DashboardLayout";
-import api from "../lib/axios";
+import { useCustomers, useDeleteCustomer } from "../hooks/useCustomers";
 
 interface Customer {
   _id: string;
@@ -29,41 +29,18 @@ interface Customer {
 }
 
 const CustomerManagement = () => {
-  const [customerList, setCustomerList] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
 
-  // Fetch customers list
-  const fetchCustomers = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get("/api/admin/customers", {
-        withCredentials: true,
-      });
-      setCustomerList(response.data.data || []);
-    } catch (error) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || "Failed to fetch customers");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+  // React Query hooks
+  const { data: customerList = [], isLoading: loading } = useCustomers();
+  const deleteCustomer = useDeleteCustomer();
 
   // Delete customer
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/api/admin/customers/${id}`, {
-        withCredentials: true,
-      });
-      message.success("Customer deleted successfully");
-      fetchCustomers();
+      await deleteCustomer.mutateAsync(id);
     } catch (error) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || "Failed to delete customer");
+      // Error handling is done in the hook
     }
   };
 

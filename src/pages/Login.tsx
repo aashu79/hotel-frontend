@@ -1,53 +1,52 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
-import { GlassCard } from '@/components/ui/glass-card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from '@/components/ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { GlassCard } from "@/components/ui/glass-card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useStaffLogin } from "../hooks/useAuth";
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
+
+  // React Query hook
+  const staffLogin = useStaffLogin();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:3000/auth/login', formData);
-      const data = response.data;
-      toast({ title: 'Login successful', description: data?.user?.email || 'Welcome back!' });
-      if (data?.token) {
-        login(data.token);
+      const result = await staffLogin.mutateAsync({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // The login success is handled in the hook, but we still need to call the auth context
+      if (result?.token) {
+        login(result.token);
       } else {
         // fallback to mark session as logged in if backend doesn't return a token yet
-        login('session');
+        login("session");
       }
-      navigate('/');
-      console.log(response.data);
-    } catch (error: any) {
-      const message = error?.response?.data?.error || error?.message || 'Login failed';
-      toast({ title: 'Login failed', description: message });
-      console.error('Login failed:', error);
-    } finally {
-      setIsLoading(false);
+      navigate("/");
+    } catch (error) {
+      // Error handling is done in the hook
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
@@ -61,9 +60,7 @@ export const Login: React.FC = () => {
             <h1 className="text-4xl md:text-5xl font-elegant font-bold text-premium mb-4">
               Welcome Back
             </h1>
-            <p className="text-xl text-gray-300">
-              Sign in to your account
-            </p>
+            <p className="text-xl text-gray-300">Sign in to your account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -97,7 +94,7 @@ export const Login: React.FC = () => {
                 <Input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={formData.password}
                   onChange={handleInputChange}
@@ -109,7 +106,11 @@ export const Login: React.FC = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -123,14 +124,21 @@ export const Login: React.FC = () => {
                 />
                 <span>Remember me</span>
               </label>
-              <a href="#" className="text-amber-400 hover:text-orange-400 transition-colors">
+              <a
+                href="#"
+                className="text-amber-400 hover:text-orange-400 transition-colors"
+              >
                 Forgot password?
               </a>
             </div>
 
             {/* Sign In Button */}
-            <Button type="submit" disabled={isLoading} className="w-full btn-premium disabled:opacity-60 disabled:cursor-not-allowed transition-transform active:scale-[0.98]">
-              {isLoading ? 'Signing in…' : 'Sign In'}
+            <Button
+              type="submit"
+              disabled={staffLogin.isPending}
+              className="w-full btn-premium disabled:opacity-60 disabled:cursor-not-allowed transition-transform active:scale-[0.98]"
+            >
+              {staffLogin.isPending ? "Signing in…" : "Sign In"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </form>
@@ -140,8 +148,11 @@ export const Login: React.FC = () => {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-400">
-              Don't have an account?{' '}
-              <Link to="/signup" className="text-amber-400 hover:text-orange-400 transition-colors font-medium">
+              Don't have an account?{" "}
+              <Link
+                to="/signup"
+                className="text-amber-400 hover:text-orange-400 transition-colors font-medium"
+              >
                 Sign up here
               </Link>
             </p>
@@ -150,7 +161,10 @@ export const Login: React.FC = () => {
 
         {/* Back to Home */}
         <div className="text-center mt-6">
-          <Link to="/" className="text-gray-400 hover:text-white transition-colors">
+          <Link
+            to="/"
+            className="text-gray-400 hover:text-white transition-colors"
+          >
             ← Back to Home
           </Link>
         </div>

@@ -1,19 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Minus, Trash2, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react';
-import { GlassCard } from '@/components/ui/glass-card';
-import { Button } from '@/components/ui/button';
-import { useCart } from '@/contexts/CartContext';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Plus,
+  Minus,
+  Trash2,
+  ShoppingBag,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react";
+import { GlassCard } from "@/components/ui/glass-card";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCreateOrder } from "../hooks/useOrders";
 
 export const Cart: React.FC = () => {
   const { state, dispatch } = useCart();
   const { toast } = useToast();
   const { isAuthenticated, token } = useAuth();
   const navigate = useNavigate();
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
+  // React Query hook
+  const createOrder = useCreateOrder();
 
   useEffect(() => {
     try {
@@ -24,96 +33,93 @@ export const Cart: React.FC = () => {
         quantity: it.quantity,
         total: Number((it.price * it.quantity).toFixed(2)),
       }));
-      
+
       // Calculate final total with tax and delivery fee
       const subtotal = state.total;
       const tax = subtotal * 0.085;
       const deliveryFee = 3.99;
       const finalTotal = subtotal + tax + deliveryFee;
-      
+
       // Log individual items
       console.table(rows);
-      
+
       // Log final totals
-      console.log('=== CART TOTALS ===');
-      console.log('Subtotal:', `$${subtotal.toFixed(2)}`);
-      console.log('Tax (8.5%):', `$${tax.toFixed(2)}`);
-      console.log('Delivery Fee:', `$${deliveryFee.toFixed(2)}`);
-      console.log('FINAL TOTAL:', `$${finalTotal.toFixed(2)}`);
-      console.log('==================');
-      
+      console.log("=== CART TOTALS ===");
+      console.log("Subtotal:", `$${subtotal.toFixed(2)}`);
+      console.log("Tax (8.5%):", `$${tax.toFixed(2)}`);
+      console.log("Delivery Fee:", `$${deliveryFee.toFixed(2)}`);
+      console.log("FINAL TOTAL:", `$${finalTotal.toFixed(2)}`);
+      console.log("==================");
+
       // Store final total for backend
       const cartData = {
         items: rows,
         subtotal: subtotal,
         tax: tax,
         deliveryFee: deliveryFee,
-        finalTotal: finalTotal
+        finalTotal: finalTotal,
       };
-      
+
       // Store in localStorage for backend access
-      localStorage.setItem('cartData', JSON.stringify(cartData));
-      
+      localStorage.setItem("cartData", JSON.stringify(cartData));
     } catch (error) {
-      console.error('Error calculating cart totals:', error);
+      console.error("Error calculating cart totals:", error);
     }
   }, [state.items, state.total]);
 
   const updateQuantity = (id: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+    dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } });
   };
 
   const removeItem = (id: string, name: string) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: id });
+    dispatch({ type: "REMOVE_ITEM", payload: id });
     toast({
-      title: 'Item Removed',
+      title: "Item Removed",
       description: `${name} removed from cart`,
-      className: 'glass-medium border-red-500/50',
+      className: "glass-medium border-red-500/50",
     });
   };
 
   const clearCart = () => {
-    dispatch({ type: 'CLEAR_CART' });
+    dispatch({ type: "CLEAR_CART" });
     toast({
-      title: 'Cart Cleared',
-      description: 'All items removed from cart',
-      className: 'glass-medium border-yellow-500/50',
+      title: "Cart Cleared",
+      description: "All items removed from cart",
+      className: "glass-medium border-yellow-500/50",
     });
   };
 
   const handleCheckout = async () => {
     // Debug: Check authentication status
-    console.log('Authentication status:', isAuthenticated);
-    console.log('Token from AuthContext:', token);
-    console.log('All cookies:', document.cookie);
-    
+    console.log("Authentication status:", isAuthenticated);
+    console.log("Token from AuthContext:", token);
+    console.log("All cookies:", document.cookie);
+
     if (!isAuthenticated) {
       toast({
-        title: 'Authentication Required',
-        description: 'Please login to proceed with checkout',
-        className: 'glass-medium border-red-500/50',
+        title: "Authentication Required",
+        description: "Please login to proceed with checkout",
+        className: "glass-medium border-red-500/50",
       });
       return;
     }
 
     if (state.items.length === 0) {
       toast({
-        title: 'Cart Empty',
-        description: 'Please add items to your cart before checkout',
-        className: 'glass-medium border-yellow-500/50',
+        title: "Cart Empty",
+        description: "Please add items to your cart before checkout",
+        className: "glass-medium border-yellow-500/50",
       });
       return;
     }
 
-    setIsCheckoutLoading(true);
-
     try {
       // Prepare order data
-      const orderArray = state.items.map(item => ({
+      const orderArray = state.items.map((item) => ({
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        total: item.price * item.quantity
+        total: item.price * item.quantity,
       }));
 
       // Calculate final total (subtotal + tax + delivery fee)
@@ -122,49 +128,29 @@ export const Cart: React.FC = () => {
       const deliveryFee = 3.99;
       const totalAmount = subtotal + tax + deliveryFee;
 
-      // Make API request to backend
-      const response = await axios.post('http://localhost:3000/order/createOrder', {
+      const orderData = {
         orderArray,
-        totalAmount
-      }, {
-        withCredentials: true // Include cookies for authentication
-      });
+        totalAmount,
+      };
 
-      if (response.status === 201) {
-        // Clear cart on successful order
-        dispatch({ type: 'CLEAR_CART' });
-        
-        toast({
-          title: 'Order Placed Successfully!',
-          description: `Order #${response.data.order.orderId} has been created`,
-          className: 'glass-medium border-green-500/50',
-        });
+      const result = await createOrder.mutateAsync(orderData);
 
-        // Log the successful order
-        console.log('Order created:', response.data.order);
-        
-        navigate('/');
-      }
-    } catch (error: any) {
-      console.error('Checkout error:', error);
-      
-      let errorMessage = 'Failed to place order. Please try again.';
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Please login to place an order';
-      } else if (error.response?.status === 400) {
-        errorMessage = 'Invalid order data. Please check your cart.';
-      }
+      // Clear cart on successful order
+      dispatch({ type: "CLEAR_CART" });
 
       toast({
-        title: 'Checkout Failed',
-        description: errorMessage,
-        className: 'glass-medium border-red-500/50',
+        title: "Order Placed Successfully!",
+        description: `Order has been created`,
+        className: "glass-medium border-green-500/50",
       });
-    } finally {
-      setIsCheckoutLoading(false);
+
+      // Log the successful order
+      console.log("Order created:", result);
+
+      navigate("/");
+    } catch (error) {
+      console.error("Checkout error:", error);
+      // Error handling is done in the hook
     }
   };
 
@@ -178,7 +164,8 @@ export const Cart: React.FC = () => {
               Your cart is empty
             </h2>
             <p className="text-gray-300 mb-6">
-              Looks like you haven't added any delicious dishes to your cart yet.
+              Looks like you haven't added any delicious dishes to your cart
+              yet.
             </p>
             <Link to="/menu">
               <Button className="btn-premium">
@@ -202,13 +189,17 @@ export const Cart: React.FC = () => {
               Your Cart
             </h1>
             <p className="text-gray-300">
-              {state.items.length} {state.items.length === 1 ? 'item' : 'items'} in your cart
+              {state.items.length} {state.items.length === 1 ? "item" : "items"}{" "}
+              in your cart
             </p>
           </div>
-          
+
           <div className="hidden md:block">
             <Link to="/menu">
-              <Button variant="outline" className="glass-medium border-white/30 text-white hover:bg-white/20">
+              <Button
+                variant="outline"
+                className="glass-medium border-white/30 text-white hover:bg-white/20"
+              >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Menu
               </Button>
@@ -220,8 +211,8 @@ export const Cart: React.FC = () => {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {state.items.map((item, index) => (
-              <GlassCard 
-                key={`${item.id}-${index}`} 
+              <GlassCard
+                key={`${item.id}-${index}`}
                 className="p-6 animate-fadeInUp group hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
@@ -233,9 +224,15 @@ export const Cart: React.FC = () => {
 
                   {/* Item Details */}
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-1">{item.name}</h3>
-                    <p className="text-gray-400 text-sm mb-2">{item.description}</p>
-                    <p className="text-orange-400 font-semibold">${item.price} each</p>
+                    <h3 className="text-lg font-semibold text-white mb-1">
+                      {item.name}
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-2">
+                      {item.description}
+                    </p>
+                    <p className="text-orange-400 font-semibold">
+                      ${item.price} each
+                    </p>
                   </div>
 
                   {/* Quantity and Remove */}
@@ -245,20 +242,24 @@ export const Cart: React.FC = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity - 1)
+                        }
                         className="w-8 h-8 rounded-full glass-light border-white/30 hover:border-orange-400 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20"
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      
+
                       <span className="text-white font-semibold min-w-[2rem] text-center bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent transition-all duration-300 hover:scale-110">
                         {item.quantity}
                       </span>
-                      
+
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity + 1)
+                        }
                         className="w-8 h-8 rounded-full glass-light border-white/30 hover:border-orange-400 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20"
                       >
                         <Plus className="w-3 h-3" />
@@ -310,45 +311,48 @@ export const Cart: React.FC = () => {
                   <span>Subtotal</span>
                   <span>${state.total.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="flex justify-between text-gray-300">
                   <span>Tax (8.5%)</span>
                   <span>${(state.total * 0.085).toFixed(2)}</span>
                 </div>
-                
+
                 <div className="flex justify-between text-gray-300">
                   <span>Delivery Fee</span>
                   <span>$3.99</span>
                 </div>
-                
+
                 <div className="border-t border-white/20 pt-4">
                   <div className="flex justify-between text-xl font-bold text-white">
                     <span>Total</span>
                     <span className="text-orange-400">
-                      ${(state.total + (state.total * 0.085) + 3.99).toFixed(2)}
+                      ${(state.total + state.total * 0.085 + 3.99).toFixed(2)}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Checkout Button */}
-              <Button 
+              <Button
                 className="w-full btn-premium mb-4"
                 onClick={handleCheckout}
-                disabled={isCheckoutLoading || !isAuthenticated}
+                disabled={createOrder.isPending || !isAuthenticated}
               >
-                {isCheckoutLoading ? (
+                {createOrder.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Processing Order...
                   </>
                 ) : (
-                  'Proceed to Checkout'
+                  "Proceed to Checkout"
                 )}
               </Button>
 
               <Link to="/menu" className="block md:hidden">
-                <Button variant="outline" className="w-full glass-medium border-white/30 text-white hover:bg-white/20">
+                <Button
+                  variant="outline"
+                  className="w-full glass-medium border-white/30 text-white hover:bg-white/20"
+                >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Continue Shopping
                 </Button>
