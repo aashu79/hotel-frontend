@@ -55,10 +55,7 @@ const schema = yup.object({
     .transform((v) => (isNaN(v) ? undefined : v))
     .integer("Sort order must be an integer")
     .default(0),
-  categoryId: yup
-    .number()
-    .required("Category is required")
-    .integer("Invalid category"),
+  categoryId: yup.string().required("Category is required"),
   image: yup.mixed().optional(),
 });
 
@@ -87,7 +84,7 @@ const ItemForm = ({
       isVegetarian: true, // API default is true
       isAvailable: true, // API default is true
       prepTimeMins: undefined,
-      sortOrder: 0, // API default is 0
+      // sortOrder: 0, // API default is 0
       categoryId: categories[0]?.id || 0,
       ...initialValues,
     },
@@ -195,7 +192,7 @@ const ItemForm = ({
             )}
           />
         </Form.Item>
-        <Form.Item
+        {/* <Form.Item
           label="Sort Order"
           validateStatus={errors.sortOrder ? "error" : ""}
           help={errors.sortOrder?.message as string}
@@ -213,7 +210,7 @@ const ItemForm = ({
               />
             )}
           />
-        </Form.Item>
+        </Form.Item> */}
       </div>
       <Form.Item
         label="Description"

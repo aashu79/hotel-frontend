@@ -26,14 +26,15 @@ const MenuContent: React.FC<MenuContentProps> = ({
   const { selectedCategory, menuCategories, setSelectedCategory } = useMenu();
 
   // Group items by category
-  const itemsByCategory = filteredItems.reduce((acc, item) => {
-    const category = item.category;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, any[]>);
+  const itemsByCategory =
+    filteredItems?.reduce((acc, item) => {
+      const category = item.category;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    }, {} as Record<string, any[]>) || {};
 
   // Get unique categories from filtered items
   const categories = Object.keys(itemsByCategory).sort();
@@ -59,7 +60,7 @@ const MenuContent: React.FC<MenuContentProps> = ({
         <h2 className="text-2xl font-display font-bold text-white">
           {selectedCategory === "All" ? "All Items" : selectedCategory}
           <span className="ml-2 text-lg text-neutral-gray">
-            ({filteredItems.length} items)
+            ({filteredItems?.length || 0} items)
           </span>
         </h2>
 
@@ -88,7 +89,7 @@ const MenuContent: React.FC<MenuContentProps> = ({
         </div>
       ) : (
         <>
-          {filteredItems.length === 0 ? (
+          {!filteredItems || filteredItems.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

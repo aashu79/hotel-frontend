@@ -1,35 +1,91 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { motion, useMotionValue, PanInfo } from "framer-motion";
 import FoodItemCard from "../FoodItemCard/FoodItemCard";
+import { useMenuItems } from "../../hooks/useMenuItems";
+import { useMenuCategories } from "../../hooks/useMenuCategories";
+import { useCart } from "../../contexts/CartContext";
+import useAuthStore from "../../store/authStore";
+import { message } from "antd";
+import { Skeleton } from "../ui/skeleton";
 
-// Optional: Define item type
-type MenuItem = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  image: string;
-  vegetarian?: boolean;
-  popular?: boolean;
-};
+const MenuHighlightsSection: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { dispatch } = useCart();
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [allMenuItems, setAllMenuItems] = useState<typeof menuItems>([]);
+  const [menuCategories, setMenuCategories] = useState<
+    { id: number; name: string }[]
+  >([]);
 
-interface MenuHighlightsSectionProps {
-  menuItems: MenuItem[];
-  // Optional: for cart functionality
-  onAddToCart?: (item: MenuItem) => void;
-  onQuantityChange?: (id: string, delta: number) => void;
-  getItemQuantity?: (id: string) => number;
-}
+  // Fetch popular menu items and categories from API
+  const { data: menu = [], isLoading: itemsLoading } = useMenuItems({
+    isAvailable: true,
+  });
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useMenuCategories();
 
-const MenuHighlightsSection: React.FC<MenuHighlightsSectionProps> = ({
-  menuItems,
-  onAddToCart,
-  onQuantityChange,
-  getItemQuantity,
-}) => {
+  useEffect(() => {
+    setAllMenuItems(menu?.data || []);
+  }, [itemsLoading, menu]);
+
+  useEffect(() => {
+    setMenuCategories(categories?.data || []);
+  }, [categoriesLoading, categories]);
+
+  const isLoading = itemsLoading || categoriesLoading;
+
+  // Filter for popular items
+  // const menuItems = allMenuItems.filter((item) => item.isPopular);
+  const menuItems = allMenuItems;
+
+  const getItemQuantity = (itemId: string) => quantities[itemId] || 1;
+
+  const updateQuantity = (itemId: string, delta: number) => {
+    setQuantities((prev) => ({
+      ...prev,
+      [itemId]: Math.max(1, (prev[itemId] || 1) + delta),
+    }));
+  };
+
+  const handleAddToCart = (item: (typeof menuItems)[0]) => {
+    // Check if user is logged in
+    if (!user) {
+      message.error({
+        content: "Please login to add items to cart",
+        style: { marginTop: "80px" },
+      });
+      navigate("/signin");
+      return;
+    }
+
+    const quantity = getItemQuantity(item.id.toString());
+
+    // Convert API item to cart item format
+    const cartItem = {
+      id: item.id.toString(),
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.categoryId?.toString() || "Uncategorized",
+      image: item.imageUrl,
+      vegetarian: item.isVegetarian,
+    };
+
+    for (let i = 0; i < quantity; i++) {
+      dispatch({ type: "ADD_ITEM", payload: cartItem });
+    }
+
+    message.success({
+      content: `${quantity}x ${item.name} added to your cart`,
+      style: { marginTop: "80px" },
+    });
+
+    // Reset quantity after adding
+    setQuantities((prev) => ({ ...prev, [item.id.toString()]: 1 }));
+  };
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleItems, setVisibleItems] = useState(1);
   const [carouselWidth, setCarouselWidth] = useState(0);
@@ -81,17 +137,17 @@ const MenuHighlightsSection: React.FC<MenuHighlightsSectionProps> = ({
   }, [currentIndex, carouselWidth, visibleItems, x]);
 
   // Navigation functions
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     if (!isDragging) {
       setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
     }
-  };
+  }, [isDragging, maxIndex]);
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     if (!isDragging) {
       setCurrentIndex((prev) => Math.max(prev - 1, 0));
     }
-  };
+  }, [isDragging]);
 
   const goToSlide = (index: number) => {
     if (!isDragging) {
@@ -142,7 +198,59 @@ const MenuHighlightsSection: React.FC<MenuHighlightsSectionProps> = ({
     }, 6000);
 
     return () => clearTimeout(timer);
-  }, [currentIndex, maxIndex, isDragging]);
+  }, [currentIndex, maxIndex, isDragging, nextSlide]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-deep-black to-black/90">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="text-light-gold font-display tracking-wider">
+              SIGNATURE DISHES
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-2 mb-4 sm:mb-6">
+              Menu Highlights
+            </h2>
+            <p className="text-neutral-gray text-base sm:text-lg max-w-2xl mx-auto">
+              Experience our chef's carefully crafted specialties, blending
+              authentic Himalayan flavors with modern culinary techniques
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Empty state
+  if (menuItems.length === 0) {
+    return (
+      <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-deep-black to-black/90">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="text-light-gold font-display tracking-wider">
+              SIGNATURE DISHES
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-2 mb-4 sm:mb-6">
+              Menu Highlights
+            </h2>
+            <p className="text-neutral-gray text-base sm:text-lg max-w-2xl mx-auto">
+              Check back soon for our popular dishes!
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-deep-black to-black/90">
@@ -168,7 +276,7 @@ const MenuHighlightsSection: React.FC<MenuHighlightsSectionProps> = ({
               initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
             >
-              {menuItems.map((item, index) => (
+              {menuItems?.map((item, index) => (
                 <motion.div
                   key={item.id}
                   className="w-full"
@@ -184,12 +292,21 @@ const MenuHighlightsSection: React.FC<MenuHighlightsSectionProps> = ({
                   {index === currentIndex && (
                     <div className="px-4 sm:px-8">
                       <FoodItemCard
-                        item={item}
-                        onAddToCart={onAddToCart}
-                        onQuantityChange={onQuantityChange}
-                        quantity={
-                          getItemQuantity ? getItemQuantity(item.id) : 1
+                        item={{
+                          ...item,
+                          id: item.id.toString(),
+                          category:
+                            menuCategories?.find(
+                              (cat) => cat.id === item.categoryId
+                            )?.name || "Uncategorized",
+                          image: item.imageUrl,
+                          vegetarian: item.isVegetarian,
+                        }}
+                        onAddToCart={() => handleAddToCart(item)}
+                        onQuantityChange={(id, delta) =>
+                          updateQuantity(id, delta)
                         }
+                        quantity={getItemQuantity(item.id.toString())}
                       />
                     </div>
                   )}
@@ -216,7 +333,7 @@ const MenuHighlightsSection: React.FC<MenuHighlightsSectionProps> = ({
               onDragEnd={handleDragEnd}
               transition={{ type: "tween", duration: 0.3 }}
             >
-              {menuItems.map((item, index) => {
+              {menuItems?.map((item, index) => {
                 const cardWidth = `${100 / visibleItems}%`;
 
                 return (
@@ -232,10 +349,21 @@ const MenuHighlightsSection: React.FC<MenuHighlightsSectionProps> = ({
                     whileHover={{ scale: 1.02 }}
                   >
                     <FoodItemCard
-                      item={item}
-                      onAddToCart={onAddToCart}
-                      onQuantityChange={onQuantityChange}
-                      quantity={getItemQuantity ? getItemQuantity(item.id) : 1}
+                      item={{
+                        ...item,
+                        id: item.id.toString(),
+                        category:
+                          menuCategories?.find(
+                            (cat) => cat.id === item.categoryId
+                          )?.name || "Uncategorized",
+                        image: item.imageUrl,
+                        vegetarian: item.isVegetarian,
+                      }}
+                      onAddToCart={() => handleAddToCart(item)}
+                      onQuantityChange={(id, delta) =>
+                        updateQuantity(id, delta)
+                      }
+                      quantity={getItemQuantity(item.id.toString())}
                     />
                   </motion.div>
                 );

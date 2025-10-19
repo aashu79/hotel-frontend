@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   Table,
@@ -30,10 +30,17 @@ interface Customer {
 
 const CustomerManagement = () => {
   const [searchText, setSearchText] = useState("");
+  const [customerList, setCustomerList] = useState<Customer[]>([]);
 
   // React Query hooks
-  const { data: customerList = [], isLoading: loading } = useCustomers();
+  const { data: fetchedCustomerList = [], isLoading: loading } = useCustomers();
   const deleteCustomer = useDeleteCustomer();
+
+  useEffect(() => {
+    if (fetchedCustomerList) {
+      setCustomerList(fetchedCustomerList.users);
+    }
+  }, [fetchedCustomerList]);
 
   // Delete customer
   const handleDelete = async (id: string) => {
@@ -45,7 +52,7 @@ const CustomerManagement = () => {
   };
 
   // Filter customers based on search
-  const filteredCustomers = customerList.filter(
+  const filteredCustomers = customerList?.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchText.toLowerCase()) ||
       customer.phoneNumber.includes(searchText) ||

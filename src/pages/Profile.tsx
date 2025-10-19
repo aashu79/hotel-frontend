@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   LogOut,
   User,
@@ -8,8 +10,12 @@ import {
   Settings,
   ChevronRight,
 } from "lucide-react";
+import useAuthStore from "../store/authStore";
 
 const Profile = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { logout: authLogout } = useAuthStore();
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   const user = {
@@ -22,18 +28,36 @@ const Profile = () => {
       icon: ShoppingBag,
       label: "My Orders",
       color: "from-red-500 to-red-600",
+      onClick: () => navigate("/my-orders"),
     },
     {
       icon: Star,
       label: "My Reviews",
       color: "from-amber-500 to-orange-500",
+      onClick: () => {}, // Future implementation
     },
     {
       icon: Settings,
       label: "Settings",
       color: "from-red-600 to-orange-500",
+      onClick: () => {}, // Future implementation
     },
   ];
+
+  // Logout handler
+  const handleLogout = () => {
+    // Clear auth storage
+    localStorage.removeItem("auth-storage");
+
+    // Clear React Query cache
+    queryClient.clear();
+
+    // Call zustand logout
+    authLogout();
+
+    // Redirect to home page
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-black pt-32 pb-12 px-4 md:px-8">
@@ -62,15 +86,11 @@ const Profile = () => {
             className="lg:col-span-1"
           >
             <div className="relative">
-              {/* Avatar Background Glow */}
               <div className="absolute inset-0 bg-gradient-to-r from-red-500/30 to-orange-500/30 blur-3xl rounded-3xl"></div>
-
-              {/* Avatar Container */}
               <div className="relative flex flex-col items-center pt-8 pb-8">
                 <div className="h-40 w-40 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl flex items-center justify-center shadow-2xl mb-6 transform hover:scale-105 transition-transform duration-300">
                   <User size={80} className="text-white" />
                 </div>
-
                 <h2 className="text-3xl font-bold text-white text-center mb-2">
                   {user.name}
                 </h2>
@@ -80,7 +100,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Action Button */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -97,13 +116,11 @@ const Profile = () => {
             transition={{ duration: 0.6 }}
             className="lg:col-span-2"
           >
-            {/* Contact Info Section */}
             <div className="mb-12">
               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <span className="w-1 h-6 bg-gradient-to-b from-red-500 to-orange-500 rounded"></span>
                 Contact Information
               </h3>
-
               <div className="space-y-3">
                 <div className="group cursor-pointer">
                   <p className="text-gray-500 text-sm mb-1">Full Name</p>
@@ -112,7 +129,6 @@ const Profile = () => {
                   </p>
                   <div className="h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-red-500/30 transition-colors mt-2"></div>
                 </div>
-
                 <div className="group cursor-pointer mt-6">
                   <p className="text-gray-500 text-sm mb-1">Phone Number</p>
                   <p className="text-white text-lg font-semibold group-hover:text-red-400 transition-colors">
@@ -123,34 +139,29 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Divider */}
             <div className="w-full h-px bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 my-12"></div>
 
-            {/* Quick Actions Section */}
             <div>
               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <span className="w-1 h-6 bg-gradient-to-b from-red-500 to-orange-500 rounded"></span>
                 Quick Access
               </h3>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {actions.map((action, index) => {
                   const IconComponent = action.icon;
                   return (
                     <motion.button
                       key={index}
+                      onClick={action.onClick}
                       onMouseEnter={() => setHoveredIndex(index)}
                       onMouseLeave={() => setHoveredIndex(null)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className="group relative px-6 py-6 rounded-2xl overflow-hidden bg-gray-900/40 border border-gray-800 hover:border-red-500/30 transition-all duration-300"
                     >
-                      {/* Hover Background */}
                       <div
                         className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
                       ></div>
-
-                      {/* Content */}
                       <div className="relative z-10 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div
@@ -177,8 +188,9 @@ const Profile = () => {
           </motion.div>
         </div>
 
-        {/* Logout Button - Full Width */}
+        {/* Logout Button with handler */}
         <motion.button
+          onClick={handleLogout} // 👈 Attach handler
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}

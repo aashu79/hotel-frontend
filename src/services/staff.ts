@@ -8,7 +8,7 @@ export const staffApi = {
     limit?: number;
     search?: string;
   }) => {
-    const response = await api.get("/api/admin/staff", { params });
+    const response = await api.get("/api/auth/users/staff", { params });
     return response.data;
   },
 

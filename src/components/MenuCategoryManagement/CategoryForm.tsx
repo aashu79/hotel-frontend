@@ -42,7 +42,7 @@ const CategoryForm = ({
     defaultValues: {
       name: "",
       description: "",
-      sortOrder: undefined,
+      // sortOrder: undefined,
       isActive: true,
       ...initialValues,
     },
@@ -90,7 +90,7 @@ const CategoryForm = ({
           )}
         />
       </Form.Item>
-      <Form.Item
+      {/* <Form.Item
         label="Sort Order"
         validateStatus={errors.sortOrder ? "error" : ""}
         help={errors.sortOrder?.message as string}
@@ -107,7 +107,7 @@ const CategoryForm = ({
             />
           )}
         />
-      </Form.Item>
+      </Form.Item> */}
       <Form.Item label="Active Status">
         <Controller
           name="isActive"

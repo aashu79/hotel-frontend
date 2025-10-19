@@ -21,7 +21,6 @@ import SignUp from "./pages/Signup";
 import StaffLogin from "./pages/StaffLogin";
 import Dashboard from "./pages/Dashboard";
 import OrdersPage from "./pages/OrdersPage";
-import MenuManagementPage from "./pages/MenuManagementPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import StaffManagement from "./pages/StaffManagement";
 import CustomerManagement from "./pages/CustomerManagement";
@@ -29,6 +28,9 @@ import MenuCategoryManagement from "./pages/MenuCategoryManagement";
 import MenuItemManagement from "./pages/MenuItemManagement";
 import RestaurantSettings from "./pages/RestaurantSettings";
 import Unauthorized from "./pages/Unauthorized";
+import OrderBill from "./pages/OrderBill";
+import Checkout from "./pages/Checkout";
+import MyOrders from "./pages/MyOrders";
 
 // Create a QueryClient instance
 const queryClient = new QueryClient();
@@ -117,6 +119,9 @@ function App() {
                           <Route element={<ProtectedRoute />}>
                             <Route path="/cart" element={<Cart />} />
                             <Route path="/profile" element={<Profile />} />
+                            <Route path="/order-bill" element={<OrderBill />} />
+                            <Route path="/checkout" element={<Checkout />} />
+                            <Route path="/my-orders" element={<MyOrders />} />
                           </Route>
 
                           {/* Catch-all Route */}

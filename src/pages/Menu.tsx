@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
-import { menuItems, menuCategories } from "@/data/menu";
-import { useToast } from "@/hooks/use-toast";
+import { useMenuItems } from "@/hooks/useMenuItems";
+import { useMenuCategories } from "@/hooks/useMenuCategories";
+import useAuthStore from "@/store/authStore";
+import { message } from "antd";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronUp, FiSearch } from "react-icons/fi";
 import { MenuProvider } from "../contexts/MenuContext";
@@ -9,14 +12,20 @@ import OrderTypeSelector from "../components/Menu/OrderTypeSelector";
 import MenuSidebar from "../components/Menu/MenuSidebar";
 import MobileFilters from "../components/Menu/MobileFilter";
 import MenuContent from "../components/Menu/MenuContent";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Menu: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [isLoading, setIsLoading] = useState(true);
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("pickup");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [menuCategories, setMenuCategories] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [menuItems, setMenuItems] = useState<typeof menuItems>([]);
   const [activeFilters, setActiveFilters] = useState<{
     vegetarian: boolean;
     spicy: boolean;
@@ -28,7 +37,21 @@ export const Menu: React.FC = () => {
   });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const { dispatch } = useCart();
-  const { toast } = useToast();
+
+  // Fetch real data from API
+  const { data: mI = [], isLoading: itemsLoading } = useMenuItems({
+    isAvailable: true,
+  });
+  const { data: mC = [], isLoading: categoriesLoading } = useMenuCategories();
+
+  useEffect(() => {
+    setMenuCategories(mC?.data);
+  }, [categoriesLoading, mC]);
+  useEffect(() => {
+    setMenuItems(mI?.data);
+  }, [itemsLoading, mI]);
+
+  const isLoading = itemsLoading || categoriesLoading;
 
   // Handle scroll to top button visibility
   useEffect(() => {
@@ -38,14 +61,6 @@ export const Menu: React.FC = () => {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Simulate loading for better UX
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
   }, []);
 
   const scrollToTop = () => {
@@ -64,46 +79,102 @@ export const Menu: React.FC = () => {
     }));
   };
 
-  const addToCart = (item: any) => {
-    const quantity = getItemQuantity(item.id);
-    for (let i = 0; i < quantity; i++) {
-      dispatch({ type: "ADD_ITEM", payload: item });
+  const addToCart = (item: (typeof menuItems)[0]) => {
+    // Check if user is logged in
+    if (!user) {
+      message.error({
+        content: "Please login to add items to cart",
+        style: {
+          marginTop: "80px",
+        },
+      });
+      navigate("/signin");
+      return;
     }
 
-    toast({
-      title: "Added to Cart!",
-      description: `${quantity}x ${item.name} added to your cart`,
-      className: "glass-medium border-red-400/50",
+    const quantity = getItemQuantity(item.id.toString());
+
+    // Convert API item to cart item format
+    const cartItem = {
+      id: item.id.toString(),
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.categoryId?.toString() || "Uncategorized",
+      image: item.imageUrl,
+      vegetarian: item.isVegetarian,
+    };
+
+    for (let i = 0; i < quantity; i++) {
+      dispatch({ type: "ADD_ITEM", payload: cartItem });
+    }
+
+    message.success({
+      content: `${quantity}x ${item.name} added to your cart`,
+      style: {
+        marginTop: "80px",
+      },
     });
 
     // Reset quantity after adding
-    setQuantities((prev) => ({ ...prev, [item.id]: 1 }));
+    setQuantities((prev) => ({ ...prev, [item.id.toString()]: 1 }));
   };
 
-  const filteredItems = menuItems.filter((item) => {
-    const matchesCategory =
-      selectedCategory === "All" || item.category === selectedCategory;
+  // Transform and filter items
+  const filteredItems = menuItems
+    ?.filter((item) => {
+      // Filter by category
+      const matchesCategory =
+        selectedCategory === "All" ||
+        item.categoryId?.toString() === selectedCategory ||
+        menuCategories?.find((cat) => cat.id === item.categoryId)?.name ===
+          selectedCategory;
 
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+      // Filter by search term
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesVegetarian = activeFilters.vegetarian
-      ? item.vegetarian === true
-      : true;
-    const matchesPopular = activeFilters.popular ? item.popular === true : true;
-    const matchesSpicy = activeFilters.spicy ? item.spicy === true : true;
+      // Filter by active filters
+      const matchesVegetarian = activeFilters.vegetarian
+        ? item.isVegetarian === true
+        : true;
+      const matchesPopular = activeFilters.popular
+        ? item.isPopular === true
+        : true;
+      const matchesSpicy = activeFilters.spicy ? item.isSpicy === true : true;
 
-    return (
-      matchesCategory &&
-      matchesSearch &&
-      matchesVegetarian &&
-      matchesPopular &&
-      matchesSpicy
-    );
-  });
+      // Only show available items
+      const isAvailable = item.isAvailable !== false;
+
+      return (
+        matchesCategory &&
+        matchesSearch &&
+        matchesVegetarian &&
+        matchesPopular &&
+        matchesSpicy &&
+        isAvailable
+      );
+    })
+    .map((item) => ({
+      // Transform API item to FoodItemCard format
+      id: item.id.toString(),
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category:
+        menuCategories?.find((cat) => cat.id === item.categoryId)?.name ||
+        "Uncategorized",
+      image: item.imageUrl,
+      vegetarian: item.isVegetarian,
+      popular: item.isPopular,
+      spicy: item.isSpicy,
+    }));
 
   // Add menuCategories to the context value
+  // Transform menuCategories from objects to just names for the sidebar
+  const categoryNames = menuCategories?.map((cat) => cat.name) || [];
+
   const menuContextValue = {
     selectedCategory,
     setSelectedCategory,
@@ -115,7 +186,7 @@ export const Menu: React.FC = () => {
     setActiveFilters,
     filteredItems,
     isLoading,
-    menuCategories,
+    menuCategories: categoryNames,
   };
 
   return (
@@ -171,15 +242,15 @@ export const Menu: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-6 md:mt-8">
-          <div className="flex flex-col lg:flex-row lg:gap-8">
-            {/* Sidebar Filters - Hidden on mobile */}
-            <div className="hidden lg:block lg:w-1/4 xl:w-1/5">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-6 md:mt-8 pb-12">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+            {/* Sidebar Filters - Hidden on mobile, sticky on desktop */}
+            <aside className="hidden lg:block lg:w-64 xl:w-72 flex-shrink-0">
               <MenuSidebar />
-            </div>
+            </aside>
 
-            {/* Menu Content */}
-            <div className="lg:w-3/4 xl:w-4/5">
+            {/* Menu Content - Full width on mobile, flexible on desktop */}
+            <main className="flex-1 min-w-0">
               <div className="lg:hidden mb-6">
                 {selectedCategory !== "All" && (
                   <motion.div
@@ -200,7 +271,7 @@ export const Menu: React.FC = () => {
                 )}
               </div>
               <MenuContent
-                filteredItems={filteredItems}
+                filteredItems={filteredItems || []}
                 quantities={quantities}
                 updateQuantity={updateQuantity}
                 addToCart={addToCart}
@@ -209,7 +280,7 @@ export const Menu: React.FC = () => {
               />
 
               {/* Empty State - Shown when no items match filters */}
-              {!isLoading && filteredItems.length === 0 && (
+              {!isLoading && filteredItems?.length === 0 && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -241,7 +312,7 @@ export const Menu: React.FC = () => {
                   </button>
                 </motion.div>
               )}
-            </div>
+            </main>
           </div>
         </div>
 

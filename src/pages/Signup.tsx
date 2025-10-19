@@ -20,7 +20,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { registerSchema, otpSchema } from "../lib/validations/auth";
 import useAuthStore from "../store/authStore";
-import { useToast } from "../components/ui/use-toast";
+import { message } from "antd";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
 
@@ -35,7 +35,6 @@ interface OtpFormData {
 
 const SignUp: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const {
     sendRegisterOtp,
     verifyRegisterOtp,
@@ -156,10 +155,9 @@ const SignUp: React.FC = () => {
       if (success) {
         setTempData({ name: data.name, phoneNumber: data.phoneNumber });
         setSuccessMessage("OTP sent successfully! Check your phone.");
-        toast({
-          title: "OTP Sent",
-          description: "Please check your phone for the verification code.",
-          className: "bg-zinc-900 border border-zinc-700 text-white",
+        message.success({
+          content: "Please check your phone for the verification code.",
+          style: { marginTop: "80px" },
         });
         // small delay for UX animation then move to step 2
         setTimeout(() => {
@@ -169,11 +167,9 @@ const SignUp: React.FC = () => {
       }
     } catch (err) {
       // error from storeError will be displayed inline
-      toast({
-        variant: "destructive",
-        title: "Failed to send OTP",
-        description: storeError || "Please try again later",
-        className: "bg-zinc-900 border border-red-500/50 text-white",
+      message.error({
+        content: storeError || "Failed to send OTP. Please try again later",
+        style: { marginTop: "80px" },
       });
     }
   };
@@ -187,20 +183,18 @@ const SignUp: React.FC = () => {
 
       if (success) {
         setSuccessMessage("Registration successful! Redirecting...");
-        toast({
-          title: "Registration successful",
-          description: "Welcome! Redirecting to homepage.",
-          className: "bg-zinc-900 border border-green-500/50 text-white",
+        message.success({
+          content: "Welcome! Redirecting to homepage.",
+          style: { marginTop: "80px" },
         });
         // small delay to give user feedback
         setTimeout(() => navigate("/"), 900);
       }
     } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Verification failed",
-        description: storeError || "Invalid OTP. Please try again.",
-        className: "bg-zinc-900 border border-red-500/50 text-white",
+      message.error({
+        content:
+          storeError || "Verification failed. Invalid OTP. Please try again.",
+        style: { marginTop: "80px" },
       });
     }
   };
@@ -212,17 +206,14 @@ const SignUp: React.FC = () => {
       try {
         await sendRegisterOtp(tempData.name, tempData.phoneNumber);
         setSuccessMessage("OTP resent! Check your phone.");
-        toast({
-          title: "OTP Resent",
-          description: "A new verification code has been sent to your phone.",
-          className: "bg-zinc-900 border border-green-500/50 text-white",
+        message.success({
+          content: "A new verification code has been sent to your phone.",
+          style: { marginTop: "80px" },
         });
       } catch {
-        toast({
-          variant: "destructive",
-          title: "Could not resend OTP",
-          description: storeError || "Please try again later",
-          className: "bg-zinc-900 border border-red-500/50 text-white",
+        message.error({
+          content: storeError || "Could not resend OTP. Please try again later",
+          style: { marginTop: "80px" },
         });
       }
     }

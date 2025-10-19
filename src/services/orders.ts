@@ -1,50 +1,96 @@
-import axios from "axios";
+import api from "../lib/axios";
 
-// Orders/Cart API Service
+// Order Status Types
+export type OrderStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "PREPARING"
+  | "READY"
+  | "COMPLETED"
+  | "CANCELLED";
+
+// Order Item Interface
+export interface OrderItem {
+  menuItemId: string;
+  quantity: number;
+}
+
+// Order Interface
+export interface Order {
+  id: string;
+  userId: string;
+  items: OrderItem[];
+  tableNumber?: number;
+  status: OrderStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Create Order Request
+export interface CreateOrderRequest {
+  userId: string;
+  items: OrderItem[];
+  totalAmount: number;
+  tableNumber?: number;
+  specialInstructions?: string;
+  status?: OrderStatus;
+}
+
+// Update Order Request
+export interface UpdateOrderRequest {
+  items?: OrderItem[];
+  tableNumber?: number;
+  status?: OrderStatus;
+}
+
+// Orders API Service
 export const ordersApi = {
   // Create order
-  createOrder: async (orderData: {
-    orderArray: Array<{
-      name: string;
-      price: number;
-      quantity: number;
-      total: number;
-    }>;
-    totalAmount: number;
-  }) => {
-    const response = await axios.post(
-      "http://localhost:3000/order/createOrder",
-      orderData,
-      {
-        withCredentials: true,
-      }
-    );
+  createOrder: async (orderData: CreateOrderRequest): Promise<Order> => {
+    const response = await api.post("/api/orders", orderData);
     return response.data;
   },
 
-  // Get orders (for admin/staff)
-  getOrders: async () => {
-    const response = await axios.get("/api/orders");
+  // Get all orders (admin/staff) with optional filters
+  getOrders: async (params?: {
+    status?: OrderStatus;
+    userId?: string;
+  }): Promise<Order[]> => {
+    const response = await api.get("/api/orders/all", { params });
+    // Handle both response formats
+    if (response.data.success && response.data.orders) {
+      return response.data.orders;
+    }
     return response.data;
   },
 
-  // Get single order
-  getOrder: async (orderId: number) => {
-    const response = await axios.get(`/api/orders/${orderId}`);
+  // Get user's orders
+  getMyOrders: async (): Promise<Order[]> => {
+    const response = await api.get("/api/orders/user/orders");
+    // Handle both response formats
+    if (response.data.success && response.data.orders) {
+      return response.data.orders;
+    }
     return response.data;
   },
 
-  // Update order status
-  updateOrderStatus: async (orderId: number, status: string) => {
-    const response = await axios.put(`/api/orders/${orderId}/status`, {
-      status,
-    });
+  // Get order by ID
+  getOrder: async (id: string): Promise<Order> => {
+    const response = await api.get(`/api/orders/${id}`);
     return response.data;
   },
 
-  // Cancel order
-  cancelOrder: async (orderId: number) => {
-    const response = await axios.put(`/api/orders/${orderId}/cancel`);
+  // Update order
+  updateOrder: async (
+    id: string,
+    orderData: UpdateOrderRequest
+  ): Promise<Order> => {
+    const response = await api.patch(`/api/orders/${id}/status`, orderData);
     return response.data;
+  },
+
+  // Delete order
+  deleteOrder: async (id: string): Promise<void> => {
+    await api.delete(`/api/orders/${id}`);
   },
 };

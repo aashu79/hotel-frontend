@@ -85,9 +85,10 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({
 
       {/* Details Section */}
       <div className="p-6 relative z-10">
-        <p className="text-neutral-gray mb-4 line-clamp-2">
-          {item.description}
-        </p>
+        <div
+          className="text-neutral-gray mb-4 line-clamp-2"
+          dangerouslySetInnerHTML={{ __html: item.description }}
+        />
 
         {/* Quantity Controls */}
         <div className="flex items-center justify-between mb-5">

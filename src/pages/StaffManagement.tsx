@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   Table,
@@ -28,6 +28,7 @@ import {
   useUpdateStaff,
   useDeleteStaff,
 } from "../hooks/useStaff";
+import { set } from "date-fns";
 
 const { Option } = Select;
 
@@ -64,7 +65,7 @@ interface Staff {
 const StaffManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
-
+  const [staffList, setStaffList] = useState<Staff[]>([]);
   const {
     control,
     handleSubmit,
@@ -75,10 +76,17 @@ const StaffManagement = () => {
   });
 
   // React Query hooks
-  const { data: staffList = [], isLoading: loading } = useStaff();
+  const { data: fetchedStaffList = [], isLoading: loading } = useStaff();
   const createStaff = useCreateStaff();
   const updateStaff = useUpdateStaff();
   const deleteStaff = useDeleteStaff();
+
+  useEffect(() => {
+    // Reset form when modal is closed
+    if (fetchedStaffList) {
+      setStaffList(fetchedStaffList.users);
+    }
+  }, [fetchedStaffList]);
 
   // Add or update staff
   const onSubmit = async (data: {

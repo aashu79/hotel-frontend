@@ -20,7 +20,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
     menuCategories,
   } = useMenu();
 
-  const categories = ["All", ...menuCategories];
+  const categories = ["All", ...(menuCategories || [])];
 
   const toggleFilter = (filter: keyof typeof activeFilters) => {
     setActiveFilters((prev) => ({

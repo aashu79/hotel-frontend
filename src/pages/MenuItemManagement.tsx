@@ -240,7 +240,7 @@ const MenuItemManagement = () => {
                     }
                   : undefined
               }
-              categories={categories}
+              categories={categories?.data || []}
               loading={createMenuItem.isPending || updateMenuItem.isPending}
               onSubmit={handleFormSubmit}
               onCancel={handleCloseModal}

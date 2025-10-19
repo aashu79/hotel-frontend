@@ -50,97 +50,6 @@ const testimonials = [
   },
 ];
 
-// Popular menu items
-const menuItems = [
-  {
-    id: 1,
-    name: "Signature Momo",
-    category: "Appetizers",
-    description:
-      "Steamed dumplings filled with seasoned meat or vegetables, served with spicy tomato chutney.",
-    price: 12.99,
-    image: images.momo,
-    popular: true,
-    vegetarian: false,
-  },
-  {
-    id: 2,
-    name: "Seafood Dhido",
-    category: "Mains",
-    description:
-      "Traditional buckwheat porridge fused with fresh seafood and Himalayan spices.",
-    price: 18.99,
-    image: images.seafood,
-    popular: true,
-    vegetarian: false,
-  },
-  {
-    id: 3,
-    name: "Thukpa",
-    category: "Soups",
-    description:
-      "Hearty noodle soup with vegetables, meat, and aromatic spices.",
-    price: 14.99,
-    image: images.thukpa,
-    popular: true,
-    vegetarian: false,
-  },
-  {
-    id: 4,
-    name: "Sel Roti",
-    category: "Bread & Rice",
-    description: "Crispy rice doughnut, a sweet traditional Nepali snack.",
-    price: 8.99,
-    image: images.selRoti,
-    popular: true,
-    vegetarian: true,
-  },
-  {
-    id: 5,
-    name: "Signature Momo",
-    category: "Appetizers",
-    description:
-      "Steamed dumplings filled with seasoned meat or vegetables, served with spicy tomato chutney.",
-    price: 12.99,
-    image: images.momo,
-    popular: true,
-    vegetarian: false,
-  },
-  {
-    id: 33,
-    name: "Thukpa",
-    category: "Soups",
-    description:
-      "Hearty noodle soup with vegetables, meat, and aromatic spices.",
-    price: 14.99,
-    image: images.thukpa,
-    popular: true,
-    vegetarian: false,
-  },
-  {
-    id: 10,
-    name: "Seafood Dhido",
-    category: "Mains",
-    description:
-      "Traditional buckwheat porridge fused with fresh seafood and Himalayan spices.",
-    price: 18.99,
-    image: images.seafood,
-    popular: true,
-    vegetarian: false,
-  },
-  {
-    id: 8,
-    name: "Signature Momo",
-    category: "Appetizers",
-    description:
-      "Steamed dumplings filled with seasoned meat or vegetables, served with spicy tomato chutney.",
-    price: 12.99,
-    image: images.momo,
-    popular: true,
-    vegetarian: false,
-  },
-];
-
 // Location data
 const locations = {
   bedford: {
@@ -179,7 +88,7 @@ export const Home = () => {
     <div className="bg-deep-black text-white">
       <HeroSection />
       {/* <OurStorySection chefSpecialImg={images.chefSpecial} /> */}
-      <MenuHighlightsSection menuItems={menuItems} />
+      <MenuHighlightsSection />
       <ExperienceSection
         images={{ interior: images.interior, chefSpecial: images.chefSpecial }}
       />

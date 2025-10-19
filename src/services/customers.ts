@@ -8,7 +8,7 @@ export const customersApi = {
     limit?: number;
     search?: string;
   }) => {
-    const response = await api.get("/api/admin/customers", { params });
+    const response = await api.get("/api/auth/users/customers", { params });
     return response.data;
   },
 

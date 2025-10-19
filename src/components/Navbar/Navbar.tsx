@@ -9,8 +9,11 @@ import {
   FiMapPin,
   FiChevronDown,
   FiUser,
+  FiShoppingCart,
 } from "react-icons/fi";
 import AuthButtons from "../Auth/AuthButtons";
+import useAuthStore from "../../store/authStore";
+import { useCart } from "../../contexts/CartContext";
 
 const Navbar = ({
   onMenuToggle,
@@ -22,6 +25,10 @@ const Navbar = ({
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const { isAuthenticated, user } = useAuthStore();
+  const { state: cartState } = useCart();
+
+  const cartItemCount = cartState.items.length;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -56,7 +63,7 @@ const Navbar = ({
   useEffect(() => {
     setIsMenuOpen(false);
     onMenuToggle(false);
-  }, [location]);
+  }, [location, onMenuToggle]);
 
   // Check if route is active
   const isActive = (path: string) => location.pathname === path;
@@ -195,23 +202,52 @@ const Navbar = ({
             {/* Auth Buttons */}
             <AuthButtons />
 
-            {/* Primary CTA Button */}
-            <Link
-              to="/menu"
-              className="bg-red-700 hover:bg-red-600 text-white px-5 py-2 rounded-md font-medium ml-4 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-700/30"
-            >
-              Order Now
-            </Link>
+            {/* Cart Button (if user is authenticated) */}
+            {isAuthenticated ? (
+              <Link
+                to="/order-bill"
+                className="relative bg-red-700 hover:bg-red-600 text-white px-5 py-2 rounded-md font-medium ml-4 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-700/30 flex items-center gap-2"
+              >
+                <FiShoppingCart className="w-5 h-5" />
+                View Cart
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <Link
+                to="/menu"
+                className="bg-red-700 hover:bg-red-600 text-white px-5 py-2 rounded-md font-medium ml-4 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-700/30"
+              >
+                Order Now
+              </Link>
+            )}
           </div>
 
-          {/* Mobile order button */}
+          {/* Mobile cart/order button */}
           <div className="lg:hidden">
-            <Link
-              to="/menu"
-              className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium transition-all duration-300"
-            >
-              Order
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/order-bill"
+                className="relative bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium transition-all duration-300 flex items-center gap-2"
+              >
+                <FiShoppingCart className="w-5 h-5" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <Link
+                to="/menu"
+                className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium transition-all duration-300"
+              >
+                Order
+              </Link>
+            )}
           </div>
         </div>
       </motion.nav>
@@ -241,40 +277,44 @@ const Navbar = ({
                     onClick={() => setIsMenuOpen(false)}
                   />
                   <MobileNavLink
-                    to="/about"
-                    label="Our Story"
-                    onClick={() => setIsMenuOpen(false)}
-                  />
-                  <MobileNavLink
-                    to="/team"
-                    label="Our Team"
-                    onClick={() => setIsMenuOpen(false)}
-                  />
-                  <MobileNavLink
-                    to="/specials"
-                    label="Specials"
-                    onClick={() => setIsMenuOpen(false)}
-                  />
-                  <MobileNavLink
                     to="/contact"
                     label="Contact"
                     onClick={() => setIsMenuOpen(false)}
                   />
-                  <MobileNavLink
-                    to="/signin"
-                    label="Sign In"
-                    onClick={() => setIsMenuOpen(false)}
-                  />
-                  <MobileNavLink
-                    to="/signup"
-                    label="Sign Up"
-                    onClick={() => setIsMenuOpen(false)}
-                  />
-                  <MobileNavLink
-                    to="/profile"
-                    label="My Profile"
-                    onClick={() => setIsMenuOpen(false)}
-                  />
+
+                  {/* Conditional Auth Links */}
+                  {isAuthenticated ? (
+                    <>
+                      <MobileNavLink
+                        to="/order-bill"
+                        label="My Cart"
+                        onClick={() => setIsMenuOpen(false)}
+                      />
+                      <MobileNavLink
+                        to="/my-orders"
+                        label="My Orders"
+                        onClick={() => setIsMenuOpen(false)}
+                      />
+                      <MobileNavLink
+                        to="/profile"
+                        label="My Profile"
+                        onClick={() => setIsMenuOpen(false)}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <MobileNavLink
+                        to="/signin"
+                        label="Sign In"
+                        onClick={() => setIsMenuOpen(false)}
+                      />
+                      <MobileNavLink
+                        to="/signup"
+                        label="Sign Up"
+                        onClick={() => setIsMenuOpen(false)}
+                      />
+                    </>
+                  )}
                 </ul>
 
                 {/* Divider */}
