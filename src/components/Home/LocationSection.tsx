@@ -139,6 +139,77 @@ const LocationSection = ({
           </div>
         </div>
       </AnimatedSection>
+      <div className="text-center mb-8 md:mb-12">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+          Visit Us
+        </h2>
+        <p className="text-lg sm:text-xl text-red-400">
+          Find us in Arlington, Texas
+        </p>
+      </div>
+
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-neutral-800/50 p-6 md:p-8 rounded-lg backdrop-blur-sm">
+          <h3 className="text-xl sm:text-2xl font-bold text-red-400 mb-6">
+            1 Stop Dhido Restaurant - Arlington
+          </h3>
+          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+            <div>
+              <div className="mb-4">
+                <h4 className="text-red-400 font-semibold mb-2 text-sm sm:text-base">
+                  Address
+                </h4>
+                <p className="text-sm sm:text-base">
+                  {locations[selectedLocation].address}
+                </p>
+                <p className="text-sm sm:text-base">
+                  {locations[selectedLocation].city}
+                </p>
+              </div>
+              <div className="mb-4">
+                <h4 className="text-red-400 font-semibold mb-2 text-sm sm:text-base">
+                  Phone
+                </h4>
+                <a
+                  href={`tel:${locations[selectedLocation].phone.replace(
+                    /\D/g,
+                    ""
+                  )}`}
+                  className="hover:text-red-400 transition-colors text-sm sm:text-base"
+                >
+                  {locations[selectedLocation].phone}
+                </a>
+              </div>
+              <div className="mb-4">
+                <h4 className="text-red-400 font-semibold mb-2 text-sm sm:text-base">
+                  Hours
+                </h4>
+                <p className="text-sm sm:text-base">
+                  {locations[selectedLocation].hours}
+                </p>
+              </div>
+              <a
+                href={locations[selectedLocation].mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm sm:text-base"
+              >
+                Get Directions
+              </a>
+            </div>
+            <div className="h-64 md:h-auto rounded-lg overflow-hidden">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3355.123!2d-97.1088!3d32.7357!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDQ0JzA4LjUiTiA5N8KwMDYnMzEuNyJX!5e0!3m2!1sen!2sus!4v1234567890"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 );

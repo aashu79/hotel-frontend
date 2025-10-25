@@ -255,16 +255,17 @@ const MenuHighlightsSection: React.FC = () => {
   return (
     <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-deep-black to-black/90">
       <div ref={containerRef} className="w-full max-w-7xl mx-auto">
-        <div className="text-center mb-12 sm:mb-16">
-          <span className="text-light-gold font-display tracking-wider">
-            SIGNATURE DISHES
-          </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-2 mb-4 sm:mb-6">
-            Menu Highlights
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            Our Signature Dishes
           </h2>
-          <p className="text-neutral-gray text-base sm:text-lg max-w-2xl mx-auto">
-            Experience our chef's carefully crafted specialties, blending
-            authentic Himalayan flavors with modern culinary techniques
+          <p className="text-lg sm:text-xl text-red-400 mb-2">
+            Authentic Nepali & Fusion Flavors
+          </p>
+          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+            From traditional Dal-Bhat to handcrafted Momos, steaming Biryani to
+            authentic Dhido - every dish is prepared with authentic spices and
+            traditional methods
           </p>
         </div>
 

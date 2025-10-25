@@ -26,9 +26,14 @@ const TestimonialsSection = ({
         <span className="text-light-gold font-display tracking-wider">
           GUEST EXPERIENCES
         </span>
-        <h2 className="text-4xl md:text-5xl font-bold mt-2 mb-6">
-          What Our Guests Say
-        </h2>
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            What Our Guests Say
+          </h2>
+          <p className="text-lg sm:text-xl text-red-400">
+            Real experiences from our Dal-Bhat & Dhido lovers
+          </p>
+        </div>
         <p className="text-neutral-gray text-lg max-w-2xl mx-auto">
           Hear from our valued patrons about their dining experiences at
           Himalayan Fusion

@@ -167,10 +167,10 @@ const Navbar = ({
             <div className="flex items-center ml-4 pl-4 border-l border-white/20">
               <FiPhone className="mr-2 text-red-400" />
               <a
-                href="tel:+16825036339"
+                href="tel:+16822524066"
                 className="text-white text-sm hover:text-red-400 transition-colors"
               >
-                (682) 503-6339
+                (682) 252-4066
               </a>
             </div>
           </div>
@@ -183,9 +183,9 @@ const Navbar = ({
                   scrolled ? "text-2xl" : "text-3xl"
                 } bg-gradient-to-r from-red-400 via-red-500 to-amber-400 bg-clip-text text-transparent`}
               >
-                HIMALAYAN
+                1 STOP DHIDO
                 <span className="block text-white text-sm font-normal tracking-widest">
-                  FUSION
+                  RESTAURANT
                 </span>
               </h1>
             </div>
@@ -324,7 +324,7 @@ const Navbar = ({
                 <div className="space-y-4">
                   <div className="flex items-center text-neutral-gray">
                     <FiPhone className="mr-3 text-red-400" />
-                    <a href="tel:+16825036339">(682) 503-6339</a>
+                    <a href="tel:+16822524066">(682) 252-4066</a>
                   </div>
                   <div className="flex items-center text-neutral-gray">
                     <FiClock className="mr-3 text-red-400" />
@@ -332,7 +332,7 @@ const Navbar = ({
                   </div>
                   <div className="flex items-center text-neutral-gray">
                     <FiMapPin className="mr-3 text-red-400" />
-                    <span>Bedford & Arlington, TX</span>
+                    <span>Arlington, TX</span>
                   </div>
                 </div>
 

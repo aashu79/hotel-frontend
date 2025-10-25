@@ -15,12 +15,13 @@ const Footer = () => {
           {/* Restaurant Info */}
           <div>
             <h2 className="text-2xl font-display font-bold mb-2">
-              Himalayan Seafood Dhido
+              1 Stop Dhido Restaurant
             </h2>
             <p className="text-neutral-gray mb-6 text-sm leading-relaxed">
-              Authentic Nepali & Himalayan cuisine meets Gulf seafood in the
-              heart of Arlington. From Sukuti to crawfish boils—we serve bold
-              flavors with tradition.
+              Authentic Nepali & Indian Taste
+            </p>
+            <p className="text-neutral-gray text-sm sm:text-base">
+              Your one stop for Dhido, Dal-Bhat, and Good Vibes!
             </p>
             <div className="flex space-x-4">
               <a
@@ -82,13 +83,24 @@ const Footer = () => {
             <ul className="space-y-4">
               <li className="flex items-start text-neutral-gray">
                 <FaMapMarkerAlt className="w-5 h-5 text-light-gold mr-3 mt-1 flex-shrink-0" />
-                <span>100 W Pioneer Pkwy, Arlington, TX 76010</span>
+                <span>100 W Pioneer Pkwy, Suite 158</span>
               </li>
               <li className="flex items-center text-neutral-gray">
                 <FaPhoneAlt className="w-5 h-5 text-light-gold mr-3 flex-shrink-0" />
-                <span>(682) 252-4066</span>
+                <span>
+                  <a
+                    href="tel:6822524066"
+                    className="hover:text-red-400 transition-colors"
+                  >
+                    (682) 252-4066
+                  </a>
+                </span>
               </li>
-              {/* Email optional — not listed in menu */}
+              <li className="flex items-center text-neutral-gray">
+                <span className="text-gray-400 text-sm sm:text-base">
+                  11:00 AM - 10:00 PM
+                </span>
+              </li>
             </ul>
           </div>
 
@@ -118,7 +130,7 @@ const Footer = () => {
         </div>
 
         {/* Footer Bottom */}
-        <div className="mt-16 pt-8 border-t border-white/10 text-center">
+        <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400 text-xs sm:text-sm">
           <div className="flex flex-wrap justify-center gap-6 mb-6">
             <Link
               to="/about"
@@ -152,8 +164,8 @@ const Footer = () => {
             </Link>
           </div>
           <p className="text-neutral-gray text-sm">
-            © {new Date().getFullYear()} Himalayan Seafood Dhido Nepali Grill &
-            Bar. All rights reserved.
+            © {new Date().getFullYear()} 1 Stop Dhido Restaurant Arlington. All
+            rights reserved.
           </p>
         </div>
       </div>

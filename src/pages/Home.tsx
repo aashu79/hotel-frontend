@@ -27,7 +27,7 @@ const testimonials = [
   {
     name: "Abhishek Sharma",
     review:
-      "Absolutely incredible authentic Nepali flavors! The momos are the best I've ever had.",
+      "The Dal-Bhat here is absolutely incredible! Authentic Nepali flavors that remind me of home. The momos are perfectly steamed!",
     rating: 5,
     image:
       "https://www.shutterstock.com/image-photo/happy-friendly-south-asian-indian-260nw-2250188167.jpg",
@@ -35,7 +35,7 @@ const testimonials = [
   {
     name: "Aadit Dhariwal",
     review:
-      "The atmosphere is amazing and the dhido combinations are truly unique. Highly recommend!",
+      "Best Dhido in Arlington! The atmosphere is amazing and the traditional preparations are spot-on. The biryani is a must-try!",
     rating: 5,
     image:
       "https://www.shutterstock.com/image-photo/indian-young-family-four-eating-260nw-1801015375.jpg",
@@ -43,7 +43,7 @@ const testimonials = [
   {
     name: "Shambhu Kumar Yadav",
     review:
-      "Feels like home! The spices and traditional cooking methods are perfectly authentic.",
+      "Feels like home! The Dal-Bhat set is complete with all traditional sides. Authentic spices and cooking methods - truly a one-stop for good vibes!",
     rating: 5,
     image:
       "https://www.anokhilife.com/wp-content/uploads/AL-Blog-Featured-Image-73-1200x900.png",
@@ -52,29 +52,21 @@ const testimonials = [
 
 // Location data
 const locations = {
-  bedford: {
-    name: "Bedford",
-    address: "2400 Airport Fwy #120",
-    city: "Bedford, TX 76022",
-    phone: "(682) 503-6339",
-    hours: "Opens at 11:00 AM CDT",
-    mapUrl:
-      "https://maps.google.com/?q=2400+Airport+Fwy+%23120+Bedford+TX+76022",
-  },
   arlington: {
     name: "Arlington",
-    address: "100 W Pioneer Pkwy",
+    address: "100 W Pioneer Pkwy, Suite 158",
     city: "Arlington, TX 76010",
-    phone: "(555) 123-4567",
-    hours: "Opens at 11:00 AM CDT",
-    mapUrl: "https://maps.google.com/?q=100+W+Pioneer+Pkwy+Arlington+TX+76010",
+    phone: "(682) 252-4066",
+    hours: "11:00 AM - 10:00 PM",
+    mapUrl:
+      "https://maps.google.com/?q=100+W+Pioneer+Pkwy+Suite+158+Arlington+TX+76010",
   },
 };
 
 // Main component
 export const Home = () => {
   const [activeTestimonial, setActiveTestimonial] = React.useState(0);
-  const [selectedLocation, setSelectedLocation] = React.useState("bedford");
+  const [selectedLocation, setSelectedLocation] = React.useState("arlington");
 
   // Auto-rotate testimonials
   useEffect(() => {

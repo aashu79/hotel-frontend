@@ -101,39 +101,25 @@ const HeroSection = () => {
 
         {/* Main heading with partial typing effect */}
         <motion.h1
-          className="text-center mb-6 md:mb-8"
+          className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 leading-tight"
           initial={{ opacity: 0 }}
           animate={{ opacity: isLoaded ? 1 : 0 }}
           transition={{ duration: 0.9, delay: 0.3 }}
         >
-          <span className="block text-amber-400 text-base md:text-xl lg:text-2xl font-medium mb-2 md:mb-3 font-display tracking-widest uppercase letter-spacing">
-            <TypedText
-              text="Himalayan Soul • Southern Heat"
-              speed={40}
-              delay={800}
-            />
-          </span>
-          <span className="block text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-tight md:leading-none">
-            <span className="text-white drop-shadow-lg">Taste of the</span>{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-red-500 font-display italic drop-shadow-lg">
-              Himalayas
-            </span>
-          </span>
+          1 Stop Dhido
+          <span className="block text-red-400 mt-2">Restaurant Arlington</span>
         </motion.h1>
-
-        {/* Description */}
-        <motion.div
-          className="text-white text-sm md:text-lg lg:text-xl mb-8 md:mb-10 max-w-2xl mx-auto text-center leading-relaxed font-light drop-shadow-md"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 20 }}
-          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-        >
-          <TypedText
-            text="Where bold Himalayan flavors meet Texas-sized seafood boils, wood-fired sekuwa, and handmade momo — all crafted with authentic spices."
-            speed={15}
-            delay={1600}
-          />
-        </motion.div>
+        <p className="text-lg sm:text-xl md:text-2xl mb-4 md:mb-8 text-gray-300">
+          Authentic Nepali & Fusion Flavors in Arlington
+        </p>
+        <p className="text-base sm:text-lg md:text-xl mb-8 md:mb-12 text-red-400 font-semibold">
+          Your one stop for Dhido, Dal-Bhat, and Good Vibes! 🍜😊🍛
+        </p>
+        <p className="text-sm sm:text-base md:text-lg mb-8 md:mb-12 text-gray-400 max-w-2xl mx-auto">
+          Experience traditional Nepali comfort food with our signature Dal-Bhat
+          sets, authentic Dhido, handcrafted Momos, and aromatic Biryani - all
+          served with love!
+        </p>
 
         {/* Special dishes highlight */}
         <motion.div

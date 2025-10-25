@@ -34,26 +34,29 @@ const CallToActionSection = () => (
   <section className="py-24 px-4 bg-gradient-radial from-light-gold/20 to-transparent">
     <div className="max-w-4xl mx-auto text-center">
       <AnimatedSection>
-        <h2 className="text-4xl md:text-5xl font-bold mb-6">
-          Experience Authentic Himalayan Fusion Cuisine
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6">
+          Craving Authentic Dal-Bhat?
         </h2>
-        <p className="text-xl text-neutral-gray mb-10 max-w-2xl mx-auto">
-          Join us for an unforgettable dining experience that brings the flavors
-          of the Himalayas to Texas
+        <p className="text-lg sm:text-xl md:text-2xl mb-8 md:mb-12 text-gray-300">
+          Visit 1 Stop Dhido Restaurant - Your one stop for Dhido, Dal-Bhat, and
+          Good Vibes!
         </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link
-            to="/reservations"
-            className="bg-accent-red hover:bg-accent-red/90 text-white px-8 py-4 rounded-md font-semibold transition-all duration-300"
+        <p className="text-base sm:text-lg mb-8 text-red-400">
+          Dine-In or Take Out - Authentic Nepali & Fusion Flavors Await! 🍜😊🍛
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="/menu"
+            className="bg-red-700 hover:bg-red-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition-all transform hover:scale-105 text-center"
           >
-            Make a Reservation
-          </Link>
-          <Link
-            to="/menu"
-            className="border-2 border-light-gold text-white hover:bg-light-gold/10 px-8 py-4 rounded-md font-semibold transition-all duration-300"
+            Order Now
+          </a>
+          <a
+            href="tel:6822524066"
+            className="bg-transparent border-2 border-red-400 text-red-400 hover:bg-red-400 hover:text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition-all transform hover:scale-105 text-center"
           >
-            Browse Our Menu
-          </Link>
+            Call Us: (682) 252-4066
+          </a>
         </div>
       </AnimatedSection>
     </div>

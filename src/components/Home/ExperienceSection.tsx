@@ -130,6 +130,71 @@ const ExperienceSection = ({ images }) => (
             </div>
           </div>
         </div>
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            Authentic Nepali & Fusion Flavors
+          </h2>
+          <p className="text-lg sm:text-xl text-red-400">
+            Your One Stop for Dhido, Dal-Bhat, and Good Vibes!
+          </p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="bg-white/5 rounded-lg p-6 flex flex-col justify-between">
+            <div>
+              <h3 className="text-2xl sm:text-3xl font-bold mb-4">
+                Traditional Dal-Bhat Experience
+              </h3>
+              <p className="text-gray-300 mb-6 text-sm sm:text-base">
+                Indulge in our authentic Dal-Bhat sets - a complete Nepali meal
+                featuring perfectly cooked lentils, fluffy rice, seasonal
+                vegetables, and traditional accompaniments. Experience the soul
+                of Nepali cuisine with our signature Dhido, handcrafted Momos,
+                aromatic Biryani, and fusion delicacies that bring the flavors
+                of the Himalayas to Arlington.
+              </p>
+              <p className="text-gray-300 mb-6 text-sm sm:text-base">
+                Each dish is prepared using time-honored recipes, authentic
+                Nepali spices, and the freshest ingredients to ensure every bite
+                transports you to the mountains of Nepal.
+              </p>
+            </div>
+            <Link
+              to="/menu"
+              className="inline-flex items-center justify-center bg-light-gold text-deep-black hover:bg-light-gold/90 px-6 py-3 rounded-md transition-all duration-300 font-medium"
+            >
+              Explore Our Menu
+              <FiArrowRight className="ml-2" />
+            </Link>
+          </div>
+          <div className="bg-white/5 rounded-lg p-6 flex flex-col justify-between">
+            <div>
+              <h3 className="text-2xl sm:text-3xl font-bold mb-4">
+                Join Our Community
+              </h3>
+              <p className="text-gray-300 mb-6 text-sm sm:text-base">
+                Be a part of our family! Enjoy exclusive offers, updates, and
+                insider access to events and specials. Sign up for our
+                newsletter and follow us on social media.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                to="/signup"
+                className="flex-1 inline-flex items-center justify-center bg-light-gold text-deep-black hover:bg-light-gold/90 px-6 py-3 rounded-md transition-all duration-300 font-medium"
+              >
+                Sign Up
+                <FiArrowRight className="ml-2" />
+              </Link>
+              <Link
+                to="/contact"
+                className="flex-1 inline-flex items-center justify-center border-2 border-light-gold text-white hover:bg-light-gold/10 px-6 py-3 rounded-md transition-all duration-300 font-medium"
+              >
+                Contact Us
+                <FiArrowRight className="ml-2" />
+              </Link>
+            </div>
+          </div>
+        </div>
       </AnimatedSection>
     </div>
   </section>
