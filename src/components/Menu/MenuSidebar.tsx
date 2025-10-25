@@ -15,7 +15,7 @@ import {
   Thermometer,
   Star,
 } from "lucide-react";
-import { useMenu } from "../../contexts/MenuContext";
+import { useMenuContext } from "../../contexts/MenuContext";
 
 const MenuSidebar: React.FC = () => {
   const {
@@ -24,7 +24,7 @@ const MenuSidebar: React.FC = () => {
     activeFilters,
     setActiveFilters,
     menuCategories,
-  } = useMenu();
+  } = useMenuContext();
 
   const getCategoryIcon = (category: string) => {
     switch (category) {

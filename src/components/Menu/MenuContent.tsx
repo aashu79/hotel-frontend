@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMenu } from "../../contexts/MenuContext";
+import { useMenuContext } from "../../contexts/MenuContext";
 import FoodItemCard from "../FoodItemCard/FoodItemCard";
 import CategoryNav from "./CategoryNav";
 
@@ -23,7 +23,8 @@ const MenuContent: React.FC<MenuContentProps> = ({
   getItemQuantity,
   isLoading,
 }) => {
-  const { selectedCategory, menuCategories, setSelectedCategory } = useMenu();
+  const { selectedCategory, menuCategories, setSelectedCategory } =
+    useMenuContext();
 
   // Group items by category
   const itemsByCategory =

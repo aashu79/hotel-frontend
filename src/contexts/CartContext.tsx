@@ -1,4 +1,10 @@
-import React, { createContext, useContext, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useEffect,
+} from "react";
 import { useCartStore } from "../store/cartStore";
 
 // Re-export types and store for convenience
@@ -36,15 +42,34 @@ type CartAction =
   | { type: "UPDATE_QUANTITY"; payload: { id: string; quantity: number } }
   | { type: "CLEAR_CART" };
 
-const CartContext = createContext<{
+interface CartContextType {
   state: CartState;
   dispatch: React.Dispatch<CartAction>;
-} | null>(null);
+  selectedLocationId: string | null;
+  setSelectedLocationId: (locationId: string | null) => void;
+}
+
+const CartContext = createContext<CartContextType | null>(null);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const cartStore = useCartStore();
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    () => {
+      const saved = localStorage.getItem("selectedLocationId");
+      return saved || null;
+    }
+  );
+
+  // Persist location to localStorage
+  useEffect(() => {
+    if (selectedLocationId) {
+      localStorage.setItem("selectedLocationId", selectedLocationId);
+    } else {
+      localStorage.removeItem("selectedLocationId");
+    }
+  }, [selectedLocationId]);
 
   // Create a dispatch function that maps old actions to new Zustand actions
   const dispatch = (action: CartAction) => {
@@ -70,7 +95,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   return (
-    <CartContext.Provider value={{ state, dispatch }}>
+    <CartContext.Provider
+      value={{
+        state,
+        dispatch,
+        selectedLocationId,
+        setSelectedLocationId,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

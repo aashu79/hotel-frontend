@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Filter, X, LeafyGreen, Thermometer, Star } from "lucide-react";
-import { useMenu } from "../../contexts/MenuContext";
+import { useMenuContext } from "../../contexts/MenuContext";
 
 interface MobileFiltersProps {
   showMobileFilters: boolean;
@@ -18,15 +18,15 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
     activeFilters,
     setActiveFilters,
     menuCategories,
-  } = useMenu();
+  } = useMenuContext();
 
   const categories = ["All", ...(menuCategories || [])];
 
   const toggleFilter = (filter: keyof typeof activeFilters) => {
-    setActiveFilters((prev) => ({
-      ...prev,
-      [filter]: !prev[filter],
-    }));
+    setActiveFilters({
+      ...activeFilters,
+      [filter]: !activeFilters[filter],
+    });
   };
 
   // Filter button with badge showing active filter count

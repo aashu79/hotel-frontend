@@ -3,16 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useMenuCategories } from "@/hooks/useMenuCategories";
+import { useLocations } from "@/hooks/useLocations";
+import { useDeliveryServices } from "@/hooks/useDeliveryServices";
 import useAuthStore from "@/store/authStore";
 import { message } from "antd";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiChevronUp, FiSearch } from "react-icons/fi";
-import { MenuProvider } from "../contexts/MenuContext";
+import { FiChevronUp, FiSearch, FiMapPin } from "react-icons/fi";
 import OrderTypeSelector from "../components/Menu/OrderTypeSelector";
 import MenuSidebar from "../components/Menu/MenuSidebar";
 import MobileFilters from "../components/Menu/MobileFilter";
-import MenuContent from "../components/Menu/MenuContent";
+import DeliveryServicesModal from "../components/Menu/DeliveryServicesModal";
+import LocationSelectionModal from "../components/Menu/LocationSelectionModal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ref } from "process";
+import MenuContent from "../components/Menu/MenuContent";
+import { MenuProvider } from "../contexts/MenuContext";
 
 export const Menu: React.FC = () => {
   const navigate = useNavigate();
@@ -36,7 +41,11 @@ export const Menu: React.FC = () => {
     popular: false,
   });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const { dispatch } = useCart();
+  const { dispatch, selectedLocationId, setSelectedLocationId } = useCart();
+
+  // New state for modals
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Fetch real data from API
   const { data: mI = [], isLoading: itemsLoading } = useMenuItems({
@@ -44,12 +53,38 @@ export const Menu: React.FC = () => {
   });
   const { data: mC = [], isLoading: categoriesLoading } = useMenuCategories();
 
+  // Fetch locations and delivery services
+  const { data: locationsData, isLoading: locationsLoading } =
+    useLocations(true);
+  const {
+    data: deliveryServicesData,
+    isLoading: deliveryServicesLoading,
+    refetch: refetchDeliveryServices,
+  } = useDeliveryServices(selectedLocationId || undefined, true);
+
   useEffect(() => {
     setMenuCategories(mC?.data);
   }, [categoriesLoading, mC]);
+
+  useEffect(() => {
+    if (showDeliveryModal) {
+      refetchDeliveryServices();
+    }
+  }, [showDeliveryModal]);
+
   useEffect(() => {
     setMenuItems(mI?.data);
   }, [itemsLoading, mI]);
+
+  // Handle order type change
+  useEffect(() => {
+    if (orderType === "delivery") {
+      // Show delivery services modal when delivery is selected
+      setShowDeliveryModal(true);
+    }
+    // Remove the auto-popup for pickup location selection
+    // Users can now select from the dropdown in OrderTypeSelector
+  }, [orderType]);
 
   const isLoading = itemsLoading || categoriesLoading;
 
@@ -89,6 +124,17 @@ export const Menu: React.FC = () => {
         },
       });
       navigate("/signin");
+      return;
+    }
+
+    // Check if location is selected for pickup
+    if (orderType === "pickup" && !selectedLocationId) {
+      message.warning({
+        content: "Please select a pickup location from the dropdown",
+        style: {
+          marginTop: "80px",
+        },
+      });
       return;
     }
 
@@ -187,6 +233,22 @@ export const Menu: React.FC = () => {
     filteredItems,
     isLoading,
     menuCategories: categoryNames,
+  };
+
+  const locations = locationsData?.locations || [];
+  const deliveryServices = deliveryServicesData?.deliveryServices || [];
+  const selectedLocation = locations.find(
+    (loc: any) => loc.id === selectedLocationId
+  );
+
+  const handleLocationSelect = (locationId: string) => {
+    setSelectedLocationId(locationId);
+    message.success({
+      content: "Pickup location selected",
+      style: {
+        marginTop: "80px",
+      },
+    });
   };
 
   return (
@@ -316,6 +378,31 @@ export const Menu: React.FC = () => {
           </div>
         </div>
 
+        {/* Location Info Banner - Show when location is selected for pickup */}
+        {orderType === "pickup" && selectedLocation && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-green-600/10 to-green-500/10 border-y border-green-500/20"
+          >
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-green-400">
+                <FiMapPin size={18} />
+                <span className="text-sm font-medium">
+                  Pickup Location: {selectedLocation.name} -{" "}
+                  {selectedLocation.address}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowLocationModal(true)}
+                className="text-sm text-green-400 hover:text-green-300 underline"
+              >
+                Change
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Scroll to top button */}
         <AnimatePresence>
           {showScrollTop && (
@@ -336,6 +423,30 @@ export const Menu: React.FC = () => {
         <MobileFilters
           showMobileFilters={showMobileFilters}
           setShowMobileFilters={setShowMobileFilters}
+        />
+
+        {/* Delivery Services Modal */}
+        <DeliveryServicesModal
+          isOpen={showDeliveryModal}
+          onClose={() => {
+            setShowDeliveryModal(false);
+            // Reset to pickup if user closes without selecting delivery service
+            if (orderType === "delivery") {
+              setOrderType("pickup");
+            }
+          }}
+          deliveryServices={deliveryServices}
+          isLoading={deliveryServicesLoading}
+        />
+
+        {/* Location Selection Modal */}
+        <LocationSelectionModal
+          isOpen={showLocationModal}
+          onClose={() => setShowLocationModal(false)}
+          locations={locations}
+          selectedLocationId={selectedLocationId}
+          onSelectLocation={handleLocationSelect}
+          isLoading={locationsLoading}
         />
       </div>
     </MenuProvider>
