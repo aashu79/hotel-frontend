@@ -10,8 +10,8 @@ console.log("Axios Token:", token);
 
 const api = axios.create({
   baseURL:
-    // import.meta.env.VITE_API_URL || "https://hotel-backend-ifst.onrender.com",
-    "http://localhost:3000",
+    import.meta.env.VITE_API_URL || "https://hotel-backend-ifst.onrender.com",
+  // "http://localhost:3000",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
