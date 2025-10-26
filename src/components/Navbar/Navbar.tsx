@@ -180,7 +180,7 @@ const Navbar = ({
             <div className="text-center">
               <h1
                 className={`font-display font-bold tracking-wide transition-all duration-300 ${
-                  scrolled ? "text-2xl" : "text-3xl"
+                  scrolled ? "text-xl" : "text-2xl"
                 } bg-gradient-to-r from-red-400 via-red-500 to-amber-400 bg-clip-text text-transparent`}
               >
                 1 STOP DHIDO

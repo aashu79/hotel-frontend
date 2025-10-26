@@ -304,8 +304,8 @@ export const Menu: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-6 md:mt-8 pb-12">
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 mt-6 md:mt-8 pb-12">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
             {/* Sidebar Filters - Hidden on mobile, sticky on desktop */}
             <aside className="hidden lg:block lg:w-64 xl:w-72 flex-shrink-0">
               <MenuSidebar />

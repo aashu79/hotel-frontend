@@ -12,9 +12,11 @@ import {
 } from "@ant-design/icons";
 import DashboardLayout from "../layouts/DashboardLayout";
 import useAuthStore from "../store/authStore";
+import useLocationStore from "../store/locationStore";
 
 const Dashboard = () => {
   const { user } = useAuthStore();
+  const { currentLocation, fetchLocationById } = useLocationStore();
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalCustomers: 0,
@@ -37,7 +39,15 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
+  useEffect(() => {
+    // Fetch user's location if they're staff
+    if (user?.locationId) {
+      fetchLocationById(user.locationId);
+    }
+  }, [user]);
+
   const isAdmin = user?.role === "ADMIN";
+  const isStaff = user?.role === "STAFF";
 
   return (
     <DashboardLayout>
@@ -56,7 +66,9 @@ const Dashboard = () => {
             Dashboard
           </h1>
           <p style={{ color: "#94a3b8", margin: 0 }}>
-            Welcome back, {user?.name}! Here's an overview of your restaurant.
+            Welcome back, {user?.name}!{" "}
+            {isStaff && currentLocation && ` (${currentLocation.name})`} Here's
+            an overview of your restaurant.
           </p>
         </div>
 

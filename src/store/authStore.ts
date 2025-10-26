@@ -29,12 +29,13 @@ interface AuthState {
 
   // Staff/Admin actions (Email/Password based)
   loginStaffAdmin: (email: string, password: string) => Promise<boolean>;
-  registerStaffAdmin: (
-    name: string,
-    email: string,
-    password: string,
-    role: "STAFF" | "ADMIN"
-  ) => Promise<boolean>;
+  registerStaffAdmin: (data: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    locationId?: string; // Add this
+  }) => Promise<void>;
 
   // Other actions
   logout: () => void;
@@ -180,20 +181,10 @@ const useAuthStore = create<AuthState>()(
         }
       },
 
-      registerStaffAdmin: async (
-        name: string,
-        email: string,
-        password: string,
-        role: "STAFF" | "ADMIN"
-      ) => {
+      registerStaffAdmin: async (data) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.post("/api/auth/staff/register", {
-            name,
-            email,
-            password,
-            role,
-          });
+          const response = await api.post("/api/auth/staff/register", data);
 
           const { token, user } = response.data;
           set({

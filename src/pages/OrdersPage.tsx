@@ -11,9 +11,13 @@ import { message } from "antd";
 import { OrderStatusCards } from "../components/Orders/OrderStatusCards";
 import { OrdersTable } from "../components/Orders/OrdersTable";
 import { OrderNotification } from "../components/Orders/OrderNotification";
+import useAuthStore from "../store/authStore";
+import orderService from "../services/orderService";
 
 const OrdersPage = () => {
+  const { user } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const {
     data: fetchedOrders,
     isLoading,
@@ -104,6 +108,24 @@ const OrdersPage = () => {
     if (seconds < 60) return `${seconds}s ago`;
     const minutes = Math.floor(seconds / 60);
     return `${minutes}m ago`;
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [user]);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      // If user is STAFF, their locationId will automatically filter orders on backend
+      // If user is ADMIN, they can see all orders or filter by location
+      const data = await orderService.getAllOrders();
+      setOrders(data);
+    } catch (error) {
+      message.error("Failed to fetch orders");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (error) {

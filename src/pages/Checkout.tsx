@@ -1,7 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag, ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
+import {
+  ShoppingBag,
+  ArrowLeft,
+  CheckCircle,
+  Loader2,
+  MapPin,
+  ExternalLink,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,13 +18,30 @@ import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
 import { useCreateOrder } from "@/hooks/useOrders";
 import useAuthStore from "@/store/authStore";
-import { message } from "antd";
+import { message, Select, Spin, Divider } from "antd";
+import useLocationStore from "../store/locationStore";
+import deliveryServiceService, {
+  DeliveryService,
+} from "../services/deliveryService";
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const { state, dispatch } = useCart();
+  const { state, dispatch, selectedLocationId, setSelectedLocationId } =
+    useCart();
   const createOrder = useCreateOrder();
+  const [activeLocations, setActiveLocations] = useState([]);
   const { user } = useAuthStore();
+  const {
+    activeLocations: locations,
+    fetchActiveLocations,
+    loading,
+  } = useLocationStore();
+
+  useEffect(() => {
+    if (locations.locations) {
+      setActiveLocations(locations?.locations);
+    }
+  }, [locations]);
 
   const [formData, setFormData] = useState({
     tableNumber: "",
@@ -28,11 +52,49 @@ const Checkout: React.FC = () => {
     tableNumber: "",
   });
 
+  const [deliveryServices, setDeliveryServices] = useState<DeliveryService[]>(
+    []
+  );
+  const [loadingServices, setLoadingServices] = useState(false);
+
+  // Initialize with selected location from cart context (from Menu page)
+  useEffect(() => {
+    fetchActiveLocations();
+  }, []);
+
+  // Fetch delivery services when location changes
+  useEffect(() => {
+    if (selectedLocationId) {
+      fetchDeliveryServices(selectedLocationId);
+    }
+  }, [selectedLocationId]);
+
+  const fetchDeliveryServices = async (locationId: string) => {
+    setLoadingServices(true);
+    try {
+      const services =
+        await deliveryServiceService.getDeliveryServicesByLocation(locationId);
+      setDeliveryServices(services.filter((s) => s.isActive));
+    } catch (error) {
+      console.error("Failed to fetch delivery services");
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const handleLocationChange = (locationId: string) => {
+    setSelectedLocationId(locationId);
+    const location = activeLocations?.find((loc) => loc.id === locationId);
+    if (location) {
+      message.success(`Location changed to ${location.name}`);
     }
   };
 
@@ -42,6 +104,11 @@ const Checkout: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
+    if (!selectedLocationId) {
+      message.error("Please select a location");
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -75,6 +142,7 @@ const Checkout: React.FC = () => {
           menuItemId: item.id.toString(),
           quantity: item.quantity,
         })),
+        locationId: selectedLocationId, // Include location
       };
 
       await createOrder.mutateAsync(orderData);
@@ -132,6 +200,10 @@ const Checkout: React.FC = () => {
   const tax = subtotal * 0.1; // 10% tax
   const total = subtotal + tax;
 
+  const selectedLocation = activeLocations.find(
+    (loc) => loc.id === selectedLocationId
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black pt-24 pb-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -159,6 +231,101 @@ const Checkout: React.FC = () => {
               </h2>
 
               <div className="space-y-6">
+                {/* Location Selection */}
+                <div className="space-y-2">
+                  <Label className="text-white flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Select Location <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    size="large"
+                    placeholder="Choose your nearest location"
+                    value={selectedLocationId || undefined}
+                    onChange={handleLocationChange}
+                    style={{ width: "100%" }}
+                    className="custom-select"
+                  >
+                    {activeLocations.map((location) => (
+                      <Select.Option key={location.id} value={location.id}>
+                        <div className="py-1">
+                          <div className="font-semibold text-white">
+                            {location.name}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {location.address}, {location.city}
+                          </div>
+                        </div>
+                      </Select.Option>
+                    ))}
+                  </Select>
+                  {selectedLocation && (
+                    <div className="mt-2 p-3 bg-green-900/20 border border-green-700/30 rounded-lg">
+                      <div className="flex items-start gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="text-green-400 font-medium">
+                            {selectedLocation.name}
+                          </div>
+                          <div className="text-gray-300 text-xs mt-1">
+                            {selectedLocation.address}, {selectedLocation.city}
+                            {selectedLocation.phoneNumber && (
+                              <> • {selectedLocation.phoneNumber}</>
+                            )}
+                          </div>
+                          {selectedLocation.openingHours && (
+                            <div className="text-gray-400 text-xs mt-1">
+                              {selectedLocation.openingHours}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Delivery Services - Only show if location is selected */}
+                {selectedLocationId && deliveryServices.length > 0 && (
+                  <>
+                    <Divider
+                      style={{ borderColor: "#374151", margin: "16px 0" }}
+                    />
+                    <div className="space-y-2">
+                      <Label className="text-white flex items-center gap-2">
+                        <ExternalLink className="w-4 h-4" />
+                        Or Order via Delivery Service
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
+                        {loadingServices ? (
+                          <div className="flex justify-center py-4 w-full">
+                            <Spin />
+                          </div>
+                        ) : (
+                          deliveryServices.map((service) => (
+                            <Button
+                              key={service.id}
+                              onClick={() =>
+                                window.open(service.serviceUrl, "_blank")
+                              }
+                              variant="outline"
+                              className="bg-gray-800 border-gray-700 hover:bg-gray-700 hover:border-red-500/30 text-white"
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              {service.name}
+                            </Button>
+                          ))
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">
+                        External delivery services may have different pricing
+                        and delivery times
+                      </p>
+                    </div>
+                    <Divider
+                      style={{ borderColor: "#374151", margin: "16px 0" }}
+                    />
+                  </>
+                )}
+
                 {/* Table Number */}
                 <div className="space-y-2">
                   <Label htmlFor="tableNumber" className="text-white">
@@ -246,7 +413,7 @@ const Checkout: React.FC = () => {
               <div className="space-y-3">
                 <Button
                   onClick={handlePlaceOrder}
-                  disabled={createOrder.isPending}
+                  disabled={createOrder.isPending || !selectedLocationId}
                   className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white py-6 rounded-xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {createOrder.isPending ? (
@@ -261,6 +428,11 @@ const Checkout: React.FC = () => {
                     </>
                   )}
                 </Button>
+                {!selectedLocationId && (
+                  <p className="text-xs text-yellow-400 text-center">
+                    Please select a location to continue
+                  </p>
+                )}
                 <Button
                   onClick={handleBackToBill}
                   variant="outline"

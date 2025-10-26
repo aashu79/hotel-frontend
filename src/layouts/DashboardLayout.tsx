@@ -11,6 +11,7 @@ import {
   MenuOutlined,
   TagsOutlined,
   UnorderedListOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import { Utensils } from "lucide-react";
 import useAuthStore from "../store/authStore";
@@ -71,6 +72,18 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               navigate("/admin/customers");
               setIsMobileMenuOpen(false);
             },
+          },
+          {
+            key: "locations",
+            icon: <EnvironmentOutlined />,
+            label: "Locations",
+            onClick: () => navigate("/admin/locations"),
+          },
+          {
+            key: "delivery-services",
+            icon: <ShoppingOutlined />,
+            label: "Delivery Services",
+            onClick: () => navigate("/admin/delivery-services"),
           },
         ]
       : []),

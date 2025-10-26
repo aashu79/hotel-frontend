@@ -1,214 +1,311 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import {
-  FiPlus,
-  FiEdit2,
-  FiTrash2,
-  FiMapPin,
-  FiPhone,
-  FiMail,
-  FiClock,
-  FiImage,
-} from "react-icons/fi";
-import { useLocations } from "@/hooks/useLocations";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axiosInstance from "@/utils/axiosInstance";
-import { message } from "antd";
-import LocationModal from "@/components/admin/LocationModal";
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Switch,
+  message,
+  Space,
+  Tag,
+  Popconfirm,
+} from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EnvironmentOutlined,
+} from "@ant-design/icons";
+import DashboardLayout from "../../layouts/DashboardLayout";
+import useLocationStore from "../../store/locationStore";
+import { Location } from "../../services/locationService";
 
-const LocationManagement: React.FC = () => {
-  const queryClient = useQueryClient();
-  const { data: locationsData, isLoading } = useLocations();
-  const [showModal, setShowModal] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<any>(null);
+const LocationManagement = () => {
+  const [locations, setLocations] = useState([]);
 
-  const locations = locationsData?.locations || [];
+  const {
+    locations: activeLocations,
+    loading,
+    fetchLocations,
+    createLocation,
+    updateLocation,
+    deleteLocation,
+  } = useLocationStore();
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await axiosInstance.delete(`/locations/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["locations"] });
-      message.success("Location deleted successfully");
-    },
-    onError: (error: any) => {
-      message.error(
-        error.response?.data?.message || "Failed to delete location"
-      );
-    },
-  });
+  useEffect(() => {
+    setLocations(activeLocations);
+  }, [activeLocations]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [form] = Form.useForm();
 
-  const handleEdit = (location: any) => {
-    setEditingLocation(location);
-    setShowModal(true);
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
+
+  const handleCreate = () => {
+    setEditingLocation(null);
+    form.resetFields();
+    setIsModalVisible(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this location?")) {
-      deleteMutation.mutate(id);
+  const handleEdit = (record: Location) => {
+    setEditingLocation(record);
+    form.setFieldsValue(record);
+    setIsModalVisible(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteLocation(id);
+      message.success("Location deleted successfully");
+    } catch (error) {
+      message.error("Failed to delete location");
     }
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setEditingLocation(null);
+  const handleSubmit = async (values: any) => {
+    try {
+      if (editingLocation) {
+        await updateLocation(editingLocation.id, values);
+        message.success("Location updated successfully");
+      } else {
+        await createLocation(values);
+        message.success("Location created successfully");
+      }
+      setIsModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      message.error(
+        `Failed to ${editingLocation ? "update" : "create"} location`
+      );
+    }
   };
 
+  const columns = [
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      render: (text: string) => (
+        <strong style={{ color: "#f1f5f9" }}>{text}</strong>
+      ),
+    },
+    {
+      title: "Address",
+      key: "address",
+      render: (_: any, record: Location) => (
+        <span style={{ color: "#cbd5e1" }}>
+          {record.address}, {record.city}, {record.country}
+        </span>
+      ),
+    },
+    {
+      title: "Contact",
+      key: "contact",
+      render: (_: any, record: Location) => (
+        <div style={{ color: "#cbd5e1" }}>
+          {record.phoneNumber && <div>{record.phoneNumber}</div>}
+          {record.email && <div>{record.email}</div>}
+        </div>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (isActive: boolean) => (
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? "Active" : "Inactive"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_: any, record: Location) => (
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+            style={{ color: "#60a5fa" }}
+          >
+            Edit
+          </Button>
+          <Popconfirm
+            title="Are you sure you want to delete this location?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="link" danger icon={<DeleteOutlined />}>
+              Delete
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+    <DashboardLayout>
+      <div style={{ padding: "0" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "24px",
+          }}
+        >
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Location Management
+            <h1
+              style={{
+                fontSize: "32px",
+                fontWeight: "bold",
+                background: "linear-gradient(to right, #fb923c, #ea580c)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                marginBottom: "8px",
+              }}
+            >
+              <EnvironmentOutlined /> Location Management
             </h1>
-            <p className="text-zinc-400">
+            <p style={{ color: "#94a3b8", margin: 0 }}>
               Manage restaurant branches and locations
             </p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+            style={{
+              background: "linear-gradient(to right, #fb923c, #ea580c)",
+              border: "none",
+              height: "40px",
+            }}
           >
-            <FiPlus size={20} />
             Add Location
-          </button>
+          </Button>
         </div>
 
-        {/* Locations Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="animate-pulse bg-zinc-800 rounded-xl h-64"
-              />
-            ))}
-          </div>
-        ) : locations.length === 0 ? (
-          <div className="text-center py-16 px-4">
-            <FiMapPin size={64} className="text-zinc-700 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-white mb-2">
-              No Locations Yet
-            </h3>
-            <p className="text-zinc-400 mb-6">
-              Start by adding your first restaurant location
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
-            >
-              Add First Location
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {locations.map((location: any) => (
-              <motion.div
-                key={location.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-zinc-800/60 rounded-xl border border-zinc-700/50 overflow-hidden hover:border-zinc-600 transition-all"
-              >
-                {/* Image */}
-                {location.imageUrl && (
-                  <div className="h-40 bg-zinc-900">
-                    <img
-                      src={location.imageUrl}
-                      alt={location.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
-                {/* Content */}
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-white mb-1">
-                        {location.name}
-                      </h3>
-                      <span
-                        className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          location.isActive
-                            ? "bg-green-500/10 text-green-400"
-                            : "bg-red-500/10 text-red-400"
-                        }`}
-                      >
-                        {location.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-zinc-400 mb-4">
-                    <div className="flex items-start gap-2">
-                      <FiMapPin size={16} className="flex-shrink-0 mt-0.5" />
-                      <span>
-                        {location.address}, {location.city}
-                        {location.state && `, ${location.state}`}
-                      </span>
-                    </div>
-
-                    {location.phoneNumber && (
-                      <div className="flex items-center gap-2">
-                        <FiPhone size={16} className="flex-shrink-0" />
-                        <span>{location.phoneNumber}</span>
-                      </div>
-                    )}
-
-                    {location.email && (
-                      <div className="flex items-center gap-2">
-                        <FiMail size={16} className="flex-shrink-0" />
-                        <span>{location.email}</span>
-                      </div>
-                    )}
-
-                    {location.openingHours && (
-                      <div className="flex items-center gap-2">
-                        <FiClock size={16} className="flex-shrink-0" />
-                        <span>{location.openingHours}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-4 border-t border-zinc-700">
-                    <button
-                      onClick={() => handleEdit(location)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition-colors"
-                    >
-                      <FiEdit2 size={16} />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(location.id)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600/10 hover:bg-red-600/20 text-red-400 rounded-lg transition-colors"
-                    >
-                      <FiTrash2 size={16} />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Location Modal */}
-      {showModal && (
-        <LocationModal
-          location={editingLocation}
-          onClose={handleCloseModal}
-          onSuccess={() => {
-            handleCloseModal();
-            queryClient.invalidateQueries({ queryKey: ["locations"] });
+        <Table
+          columns={columns}
+          dataSource={locations}
+          rowKey="id"
+          loading={loading}
+          style={{
+            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+            borderRadius: "12px",
+            overflow: "hidden",
           }}
+          pagination={{ pageSize: 10 }}
         />
-      )}
-    </div>
+
+        <Modal
+          title={editingLocation ? "Edit Location" : "Add New Location"}
+          open={isModalVisible}
+          onCancel={() => {
+            setIsModalVisible(false);
+            form.resetFields();
+          }}
+          onOk={() => form.submit()}
+          okText={editingLocation ? "Update" : "Create"}
+          width={600}
+        >
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            initialValues={{ isActive: true }}
+          >
+            <Form.Item
+              label="Location Name"
+              name="name"
+              rules={[
+                { required: true, message: "Please enter location name" },
+              ]}
+            >
+              <Input placeholder="e.g., Main Branch, Downtown Branch" />
+            </Form.Item>
+
+            <Form.Item
+              label="Address"
+              name="address"
+              rules={[{ required: true, message: "Please enter address" }]}
+            >
+              <Input placeholder="Street address" />
+            </Form.Item>
+
+            <Space style={{ width: "100%" }} size="middle">
+              <Form.Item
+                label="City"
+                name="city"
+                rules={[{ required: true, message: "Required" }]}
+                style={{ flex: 1 }}
+              >
+                <Input placeholder="City" />
+              </Form.Item>
+
+              <Form.Item label="State" name="state" style={{ flex: 1 }}>
+                <Input placeholder="State (optional)" />
+              </Form.Item>
+            </Space>
+
+            <Space style={{ width: "100%" }} size="middle">
+              <Form.Item
+                label="Country"
+                name="country"
+                rules={[{ required: true, message: "Required" }]}
+                style={{ flex: 1 }}
+              >
+                <Input placeholder="Country" />
+              </Form.Item>
+
+              <Form.Item
+                label="Postal Code"
+                name="postalCode"
+                style={{ flex: 1 }}
+              >
+                <Input placeholder="Postal code" />
+              </Form.Item>
+            </Space>
+
+            <Space style={{ width: "100%" }} size="middle">
+              <Form.Item
+                label="Phone Number"
+                name="phoneNumber"
+                style={{ flex: 1 }}
+              >
+                <Input placeholder="+1234567890" />
+              </Form.Item>
+
+              <Form.Item label="Email" name="email" style={{ flex: 1 }}>
+                <Input type="email" placeholder="branch@email.com" />
+              </Form.Item>
+            </Space>
+
+            <Form.Item label="Opening Hours" name="openingHours">
+              <Input.TextArea placeholder="e.g., Mon-Sun: 9AM-10PM" rows={2} />
+            </Form.Item>
+
+            <Form.Item label="Image URL" name="imageUrl">
+              <Input placeholder="https://..." />
+            </Form.Item>
+
+            <Form.Item
+              label="Active Status"
+              name="isActive"
+              valuePropName="checked"
+            >
+              <Switch />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
+    </DashboardLayout>
   );
 };
 

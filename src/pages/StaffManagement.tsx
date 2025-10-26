@@ -28,7 +28,7 @@ import {
   useUpdateStaff,
   useDeleteStaff,
 } from "../hooks/useStaff";
-import { set } from "date-fns";
+import useLocationStore from "../store/locationStore";
 
 const { Option } = Select;
 
@@ -52,6 +52,7 @@ const staffSchema = yup.object().shape({
     )
     .required("Password is required"),
   role: yup.string().required("Role is required"),
+  locationId: yup.string().required("Location is required"),
 });
 
 interface Staff {
@@ -80,6 +81,7 @@ const StaffManagement = () => {
   const createStaff = useCreateStaff();
   const updateStaff = useUpdateStaff();
   const deleteStaff = useDeleteStaff();
+  const { locations, fetchLocations } = useLocationStore();
 
   useEffect(() => {
     // Reset form when modal is closed
@@ -88,12 +90,17 @@ const StaffManagement = () => {
     }
   }, [fetchedStaffList]);
 
+  useEffect(() => {
+    fetchLocations(); // Fetch locations
+  }, []);
+
   // Add or update staff
   const onSubmit = async (data: {
     name: string;
     email: string;
     password?: string;
     role: string;
+    locationId: string;
   }) => {
     try {
       if (editingStaff) {
@@ -418,6 +425,34 @@ const StaffManagement = () => {
                   >
                     <Option value="STAFF">Staff</Option>
                     <Option value="ADMIN">Admin</Option>
+                  </Select>
+                )}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={<span style={{ color: "#cbd5e1" }}>Location</span>}
+              validateStatus={errors.locationId ? "error" : ""}
+              help={errors.locationId?.message}
+            >
+              <Controller
+                name="locationId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    placeholder="Select location"
+                    style={{
+                      width: "100%",
+                    }}
+                  >
+                    {locations
+                      .filter((loc) => loc.isActive)
+                      .map((location) => (
+                        <Option key={location.id} value={location.id}>
+                          {location.name} - {location.city}
+                        </Option>
+                      ))}
                   </Select>
                 )}
               />

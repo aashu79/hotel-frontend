@@ -31,6 +31,8 @@ import Unauthorized from "./pages/Unauthorized";
 import OrderBill from "./pages/OrderBill";
 import Checkout from "./pages/Checkout";
 import MyOrders from "./pages/MyOrders";
+import LocationManagement from "./pages/admin/LocationManagement";
+import DeliveryServiceManagement from "./pages/admin/DeliveryServiceManagement";
 
 // Create a QueryClient instance
 const queryClient = new QueryClient();
@@ -94,6 +96,14 @@ function App() {
                   <Route
                     path="/admin/settings"
                     element={<RestaurantSettings />}
+                  />
+                  <Route
+                    path="/admin/locations"
+                    element={<LocationManagement />}
+                  />
+                  <Route
+                    path="/admin/delivery-services"
+                    element={<DeliveryServiceManagement />}
                   />
                 </Route>
 

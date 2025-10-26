@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { motion, useMotionValue, PanInfo } from "framer-motion";
+import { Carousel } from "antd";
+import type { CarouselRef } from "antd/es/carousel";
 import FoodItemCard from "../FoodItemCard/FoodItemCard";
 import { useMenuItems } from "../../hooks/useMenuItems";
 import { useMenuCategories } from "../../hooks/useMenuCategories";
@@ -19,6 +20,7 @@ const MenuHighlightsSection: React.FC = () => {
   const [menuCategories, setMenuCategories] = useState<
     { id: number; name: string }[]
   >([]);
+  const carouselRef = useRef<CarouselRef>(null);
 
   // Fetch popular menu items and categories from API
   const { data: menu = [], isLoading: itemsLoading } = useMenuItems({
@@ -38,7 +40,6 @@ const MenuHighlightsSection: React.FC = () => {
   const isLoading = itemsLoading || categoriesLoading;
 
   // Filter for popular items
-  // const menuItems = allMenuItems.filter((item) => item.isPopular);
   const menuItems = allMenuItems;
 
   const getItemQuantity = (itemId: string) => quantities[itemId] || 1;
@@ -86,119 +87,70 @@ const MenuHighlightsSection: React.FC = () => {
     // Reset quantity after adding
     setQuantities((prev) => ({ ...prev, [item.id.toString()]: 1 }));
   };
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [visibleItems, setVisibleItems] = useState(1);
-  const [carouselWidth, setCarouselWidth] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const maxIndex = Math.max(0, menuItems.length - visibleItems);
-  const x = useMotionValue(0);
 
-  // Update visible items and carousel width based on screen width
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      let itemsToShow = 1;
-
-      if (width < 640) {
-        itemsToShow = 1;
-      } else if (width < 1024) {
-        itemsToShow = 2;
-      } else if (width < 1280) {
-        itemsToShow = 3;
-      } else {
-        itemsToShow = 4; // Show 4 items on larger screens
-      }
-
-      setVisibleItems(itemsToShow);
-
-      // Ensure current index is valid after resize
-      setCurrentIndex((prev) =>
-        Math.min(prev, Math.max(0, menuItems.length - itemsToShow))
-      );
-
-      // Update carousel width
-      if (carouselRef.current && containerRef.current) {
-        setCarouselWidth(carouselRef.current.offsetWidth);
-      }
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [menuItems.length]);
-
-  // Update x position when current index changes
-  useEffect(() => {
-    const itemWidth = carouselWidth / visibleItems;
-    const newPosition = -currentIndex * itemWidth;
-    x.set(newPosition);
-  }, [currentIndex, carouselWidth, visibleItems, x]);
-
-  // Navigation functions
-  const nextSlide = useCallback(() => {
-    if (!isDragging) {
-      setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
-    }
-  }, [isDragging, maxIndex]);
-
-  const prevSlide = useCallback(() => {
-    if (!isDragging) {
-      setCurrentIndex((prev) => Math.max(prev - 1, 0));
-    }
-  }, [isDragging]);
-
-  const goToSlide = (index: number) => {
-    if (!isDragging) {
-      setCurrentIndex(Math.min(Math.max(0, index), maxIndex));
-    }
+  // Navigation handlers
+  const handlePrev = () => {
+    carouselRef.current?.prev();
   };
 
-  // Handle drag gestures
-  const handleDragStart = () => {
-    setIsDragging(true);
+  const handleNext = () => {
+    carouselRef.current?.next();
   };
 
-  const handleDragEnd = (
-    e: MouseEvent | TouchEvent | PointerEvent,
-    info: PanInfo
-  ) => {
-    setIsDragging(false);
-    const itemWidth = carouselWidth / visibleItems;
-    const threshold = itemWidth * 0.2; // 20% of item width
-
-    if (Math.abs(info.offset.x) > threshold) {
-      if (info.offset.x > 0 && currentIndex > 0) {
-        prevSlide();
-      } else if (info.offset.x < 0 && currentIndex < maxIndex) {
-        nextSlide();
-      } else {
-        // Snap back to current position
-        const newPosition = -currentIndex * itemWidth;
-        x.set(newPosition);
-      }
-    } else {
-      // If dragged less than threshold, snap back
-      const newPosition = -currentIndex * itemWidth;
-      x.set(newPosition);
-    }
+  // Carousel settings
+  const carouselSettings = {
+    dots: true,
+    infinite: menuItems.length > 4,
+    speed: 600,
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 4000,
+    pauseOnHover: true,
+    swipeToSlide: true,
+    arrows: false, // Disable default arrows, use custom buttons
+    responsive: [
+      {
+        breakpoint: 1536,
+        settings: {
+          slidesToShow: 4,
+          slidesToScroll: 1,
+        },
+      },
+      {
+        breakpoint: 1280,
+        settings: {
+          slidesToShow: 3,
+          slidesToScroll: 1,
+        },
+      },
+      {
+        breakpoint: 1024,
+        settings: {
+          slidesToShow: 2,
+          slidesToScroll: 1,
+        },
+      },
+      {
+        breakpoint: 768,
+        settings: {
+          slidesToShow: 1,
+          slidesToScroll: 1,
+          centerMode: true,
+          centerPadding: "40px",
+        },
+      },
+      {
+        breakpoint: 640,
+        settings: {
+          slidesToShow: 1,
+          slidesToScroll: 1,
+          centerMode: true,
+          centerPadding: "20px",
+        },
+      },
+    ],
   };
-
-  // Auto-advance the carousel (disabled during drag)
-  useEffect(() => {
-    if (isDragging) return;
-
-    const timer = setTimeout(() => {
-      if (currentIndex < maxIndex) {
-        nextSlide();
-      } else {
-        setCurrentIndex(0);
-      }
-    }, 6000);
-
-    return () => clearTimeout(timer);
-  }, [currentIndex, maxIndex, isDragging, nextSlide]);
 
   // Loading state
   if (isLoading) {
@@ -206,10 +158,10 @@ const MenuHighlightsSection: React.FC = () => {
       <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-deep-black to-black/90">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
-            <span className="text-light-gold font-display tracking-wider">
+            <span className="text-light-gold font-display tracking-wider text-sm sm:text-base">
               SIGNATURE DISHES
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-2 mb-4 sm:mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold mt-2 mb-4 sm:mb-6">
               Menu Highlights
             </h2>
             <p className="text-neutral-gray text-base sm:text-lg max-w-2xl mx-auto">
@@ -217,10 +169,10 @@ const MenuHighlightsSection: React.FC = () => {
               authentic Himalayan flavors with modern culinary techniques
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="space-y-4">
-                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full rounded-2xl" />
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
               </div>
@@ -237,10 +189,10 @@ const MenuHighlightsSection: React.FC = () => {
       <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-deep-black to-black/90">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
-            <span className="text-light-gold font-display tracking-wider">
+            <span className="text-light-gold font-display tracking-wider text-sm sm:text-base">
               SIGNATURE DISHES
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-2 mb-4 sm:mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold mt-2 mb-4 sm:mb-6">
               Menu Highlights
             </h2>
             <p className="text-neutral-gray text-base sm:text-lg max-w-2xl mx-auto">
@@ -253,184 +205,166 @@ const MenuHighlightsSection: React.FC = () => {
   }
 
   return (
-    <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-deep-black to-black/90">
-      <div ref={containerRef} className="w-full max-w-7xl mx-auto">
+    <section className="py-16 sm:py-24 px-4 bg-gradient-to-b from-deep-black to-black/90 overflow-hidden">
+      <div className="w-full max-w-7xl mx-auto">
+        {/* Section Header */}
         <div className="text-center mb-12 md:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            Our Signature Dishes
+          <span className="text-light-gold font-display tracking-wider text-sm sm:text-base uppercase">
+            Signature Dishes
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold mt-3 mb-4 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+            Our Special Menu
           </h2>
-          <p className="text-lg sm:text-xl text-red-400 mb-2">
+          <p className="text-lg sm:text-xl text-red-400 mb-3 font-medium">
             Authentic Nepali & Fusion Flavors
           </p>
-          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto leading-relaxed">
             From traditional Dal-Bhat to handcrafted Momos, steaming Biryani to
             authentic Dhido - every dish is prepared with authentic spices and
             traditional methods
           </p>
         </div>
 
+        {/* Carousel with Navigation Buttons */}
         <div className="relative">
-          {/* Mobile View - Single Card Display */}
-          <div className="block md:hidden relative">
-            <motion.div
-              className="relative overflow-hidden"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-            >
-              {menuItems?.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  className="w-full"
-                  initial={{ opacity: 1, x: 0 }}
-                  animate={{
-                    opacity: index === currentIndex ? 1 : 0,
-                    x: index === currentIndex ? 0 : 100,
-                    position: index === currentIndex ? "relative" : "absolute",
-                    zIndex: index === currentIndex ? 1 : 0,
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {index === currentIndex && (
-                    <div className="px-4 sm:px-8">
-                      <FoodItemCard
-                        item={{
-                          ...item,
-                          id: item.id.toString(),
-                          category:
-                            menuCategories?.find(
-                              (cat) => cat.id === item.categoryId
-                            )?.name || "Uncategorized",
-                          image: item.imageUrl,
-                          vegetarian: item.isVegetarian,
-                        }}
-                        onAddToCart={() => handleAddToCart(item)}
-                        onQuantityChange={(id, delta) =>
-                          updateQuantity(id, delta)
-                        }
-                        quantity={getItemQuantity(item.id.toString())}
-                      />
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-
-          {/* Desktop View - Carousel */}
-          <div
-            ref={carouselRef}
-            className="hidden md:block relative overflow-hidden"
+          {/* Left Navigation Button */}
+          <button
+            onClick={handlePrev}
+            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-10 w-12 h-12 items-center justify-center bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-black"
+            aria-label="Previous slide"
           >
-            <motion.div
-              className="flex"
-              style={{ x }}
-              drag="x"
-              dragConstraints={{
-                left: -carouselWidth * (maxIndex / visibleItems),
-                right: 0,
-              }}
-              dragElastic={0.1}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              transition={{ type: "tween", duration: 0.3 }}
+            <FiChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Right Navigation Button */}
+          <button
+            onClick={handleNext}
+            className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-10 w-12 h-12 items-center justify-center bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-black"
+            aria-label="Next slide"
+          >
+            <FiChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Carousel */}
+          <div className="px-2 sm:px-4">
+            <Carousel
+              ref={carouselRef}
+              {...carouselSettings}
+              className="menu-carousel"
             >
-              {menuItems?.map((item, index) => {
-                const cardWidth = `${100 / visibleItems}%`;
-
-                return (
-                  <motion.div
-                    key={item.id}
-                    style={{
-                      width: cardWidth,
-                      paddingRight: "1rem",
+              {menuItems?.map((item) => (
+                <div key={item.id} className="px-3 py-4">
+                  <FoodItemCard
+                    item={{
+                      ...item,
+                      id: item.id.toString(),
+                      category:
+                        menuCategories?.find(
+                          (cat) => cat.id === item.categoryId
+                        )?.name || "Uncategorized",
+                      image: item.imageUrl,
+                      vegetarian: item.isVegetarian,
+                      popular: item.isPopular,
                     }}
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <FoodItemCard
-                      item={{
-                        ...item,
-                        id: item.id.toString(),
-                        category:
-                          menuCategories?.find(
-                            (cat) => cat.id === item.categoryId
-                          )?.name || "Uncategorized",
-                        image: item.imageUrl,
-                        vegetarian: item.isVegetarian,
-                      }}
-                      onAddToCart={() => handleAddToCart(item)}
-                      onQuantityChange={(id, delta) =>
-                        updateQuantity(id, delta)
-                      }
-                      quantity={getItemQuantity(item.id.toString())}
-                    />
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </div>
-
-          {/* Navigation Controls - Both Mobile & Desktop */}
-          <div className="flex flex-col items-center mt-8 gap-4">
-            {/* Dot indicators */}
-            <div className="flex items-center justify-center gap-2 mb-4">
-              {Array.from({ length: maxIndex + 1 }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => goToSlide(i)}
-                  className={`transition-all duration-300 w-2.5 h-2.5 rounded-full ${
-                    i === currentIndex
-                      ? "bg-light-gold"
-                      : "bg-white/20 hover:bg-white/40"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
+                    onAddToCart={() => handleAddToCart(item)}
+                    onQuantityChange={(id, delta) => updateQuantity(id, delta)}
+                    quantity={getItemQuantity(item.id.toString())}
+                  />
+                </div>
               ))}
-            </div>
-
-            {/* Next/prev buttons */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={prevSlide}
-                disabled={currentIndex === 0}
-                className={`p-3 rounded-full ${
-                  currentIndex === 0
-                    ? "text-neutral-gray bg-white/5"
-                    : "text-white bg-red-700 hover:bg-red-600"
-                } transition-all duration-300`}
-                aria-label="Previous slide"
-              >
-                <FiChevronLeft size={24} />
-              </button>
-
-              <button
-                onClick={nextSlide}
-                disabled={currentIndex === maxIndex}
-                className={`p-3 rounded-full ${
-                  currentIndex === maxIndex
-                    ? "text-neutral-gray bg-white/5"
-                    : "text-white bg-red-700 hover:bg-red-600"
-                } transition-all duration-300`}
-                aria-label="Next slide"
-              >
-                <FiChevronRight size={24} />
-              </button>
-            </div>
+            </Carousel>
           </div>
         </div>
 
+        {/* Mobile Navigation Buttons (Below carousel) */}
+        <div className="flex lg:hidden items-center justify-center gap-4 mt-8">
+          <button
+            onClick={handlePrev}
+            className="w-10 h-10 flex items-center justify-center bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-400"
+            aria-label="Previous slide"
+          >
+            <FiChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleNext}
+            className="w-10 h-10 flex items-center justify-center bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-400"
+            aria-label="Next slide"
+          >
+            <FiChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* View Complete Menu Button */}
         <div className="text-center mt-12 sm:mt-16">
           <Link
             to="/menu"
-            className="group inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-md transition-all duration-300 font-semibold"
+            className="group inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white px-8 sm:px-10 py-3 sm:py-4 rounded-lg transition-all duration-300 font-medium shadow-lg hover:shadow-xl hover:shadow-red-600/20 transform hover:scale-105"
           >
             View Complete Menu
             <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </div>
+
+      {/* Custom Carousel Styles */}
+      <style jsx global>{`
+        .menu-carousel .slick-slide {
+          padding: 0 8px;
+        }
+
+        .menu-carousel .slick-list {
+          margin: 0 -8px;
+          padding: 20px 0;
+        }
+
+        .menu-carousel .slick-dots {
+          bottom: -40px;
+        }
+
+        .menu-carousel .slick-dots li {
+          width: 12px;
+          height: 12px;
+          margin: 0 6px;
+        }
+
+        .menu-carousel .slick-dots li button {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.2);
+          transition: all 0.3s ease;
+        }
+
+        .menu-carousel .slick-dots li button:hover {
+          background: rgba(255, 255, 255, 0.4);
+          transform: scale(1.2);
+        }
+
+        .menu-carousel .slick-dots li button:before {
+          display: none;
+        }
+
+        .menu-carousel .slick-dots li.slick-active button {
+          background: #fbbf24;
+          width: 32px;
+          border-radius: 6px;
+        }
+
+        .menu-carousel .slick-track {
+          display: flex;
+          align-items: stretch;
+        }
+
+        .menu-carousel .slick-slide > div {
+          height: 100%;
+        }
+
+        @media (max-width: 1024px) {
+          .menu-carousel .slick-dots {
+            bottom: -50px;
+          }
+        }
+      `}</style>
     </section>
   );
 };
