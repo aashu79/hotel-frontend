@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import axios from "axios";
+import api from "../lib/axios";
 
 export type UserRole = "CUSTOMER" | "ADMIN" | "STAFF";
 
@@ -43,9 +44,6 @@ interface AuthState {
 }
 
 // Create axios instance with base URL
-const api = axios.create({
-  baseURL: "http://localhost:3000", // Replace with your actual API URL
-});
 
 // Add authorization header interceptor
 api.interceptors.request.use((config) => {
