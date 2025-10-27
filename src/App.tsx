@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { ConfigProvider, theme } from "antd";
 import Navbar from "./components/Navbar/Navbar";
+import ScrollToTop from "./components/ScrollToTop";
 import Footer from "./components/Footer/Footer";
 import MobileOrderButton from "./components/MobileOrderButton/MobileOrderButton";
 import { Menu } from "@/pages/Menu";
@@ -58,6 +59,7 @@ function App() {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 {/* Staff Dashboard Route (STAFF role only) */}
                 <Route

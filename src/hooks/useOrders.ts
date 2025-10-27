@@ -35,8 +35,9 @@ export const useMyOrders = () => {
   return useQuery({
     queryKey: ORDERS_KEYS.myOrders(),
     queryFn: () => ordersApi.getMyOrders(),
-    staleTime: 5 * 60 * 1000, // 5 minutes - no polling for customer
+    staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchInterval: 20000, // Auto-refresh every 20 seconds
   });
 };
 

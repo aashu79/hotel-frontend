@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -19,7 +20,7 @@ import { useMyOrders } from "@/hooks/useOrders";
 import { OrderStatus } from "@/services/orders";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { ChefHat, CheckCheck } from "lucide-react";
+import { ChefHat, CheckCheck, RotateCw } from "lucide-react";
 
 const statusConfig: Record<
   OrderStatus,
@@ -89,9 +90,29 @@ const statusConfig: Record<
   },
 };
 
+const REFRESH_INTERVAL = 20;
 const MyOrders: React.FC = () => {
-  const { data: orders, isLoading, error } = useMyOrders();
+  const { data: orders, isLoading, error, refetch, isFetching } = useMyOrders();
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [refreshIn, setRefreshIn] = useState(REFRESH_INTERVAL);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const queryClient = useQueryClient();
+
+  // Countdown timer for next auto-refresh
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setRefreshIn((prev) => (prev > 1 ? prev - 1 : REFRESH_INTERVAL));
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // Reset timer on manual or auto refetch
+  useEffect(() => {
+    setRefreshIn(REFRESH_INTERVAL);
+  }, [isFetching]);
 
   const toggleOrderExpansion = (orderId: string) => {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
@@ -238,6 +259,34 @@ const MyOrders: React.FC = () => {
               Track your order status and history
             </p>
           </div>
+          <motion.button
+            onClick={() => refetch()}
+            className="ml-auto bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all flex items-center gap-2"
+            title="Refresh Orders"
+            whileTap={{ scale: 0.95 }}
+            disabled={isLoading}
+          >
+            <motion.span
+              animate={isFetching ? { rotate: 360 } : { rotate: 0 }}
+              transition={
+                isFetching
+                  ? { repeat: Infinity, duration: 0.8, ease: "linear" }
+                  : {}
+              }
+              className="inline-flex"
+            >
+              <RotateCw className="w-5 h-5" />
+            </motion.span>
+            <span className="hidden sm:inline">Refresh</span>
+            <motion.span
+              className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-900/80 text-orange-200 font-bold text-xs font-mono shadow-sm"
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ repeat: Infinity, duration: 1, ease: "easeInOut" }}
+            >
+              <Clock className="w-4 h-4 text-orange-300" />
+              {refreshIn}s
+            </motion.span>
+          </motion.button>
         </motion.div>
 
         {/* Orders Grid */}

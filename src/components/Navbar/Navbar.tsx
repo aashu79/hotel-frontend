@@ -10,6 +10,7 @@ import {
   FiChevronDown,
   FiUser,
   FiShoppingCart,
+  FiShoppingBag,
 } from "react-icons/fi";
 import AuthButtons from "../Auth/AuthButtons";
 import useAuthStore from "../../store/authStore";
@@ -198,10 +199,17 @@ const Navbar = ({
               isActive={isActive("/contact")}
               label="Contact"
             />
-
+            {/* My Orders link for logged-in users */}
+            {isAuthenticated && (
+              <NavLink
+                to="/my-orders"
+                isActive={isActive("/my-orders")}
+                label="My Orders"
+                icon={<FiShoppingBag className="w-5 h-5 mr-2" />}
+              />
+            )}
             {/* Auth Buttons */}
             <AuthButtons />
-
             {/* Cart Button (if user is authenticated) */}
             {isAuthenticated ? (
               <Link
@@ -293,6 +301,7 @@ const Navbar = ({
                       <MobileNavLink
                         to="/my-orders"
                         label="My Orders"
+                        icon={<FiShoppingBag className="w-5 h-5 mr-2" />}
                         onClick={() => setIsMenuOpen(false)}
                       />
                       <MobileNavLink
@@ -425,17 +434,20 @@ const NavLink = ({
   to,
   label,
   isActive,
+  icon,
 }: {
   to: string;
   label: string;
   isActive: boolean;
+  icon?: React.ReactNode;
 }) => (
   <Link
     to={to}
-    className={`relative px-4 py-2 font-medium transition-colors hover:text-red-400 ${
+    className={`relative px-4 py-2 font-medium transition-colors hover:text-red-400 flex items-center ${
       isActive ? "text-red-400" : "text-white"
     }`}
   >
+    {icon && icon}
     <span>{label}</span>
     {isActive && (
       <motion.span
@@ -450,10 +462,12 @@ const NavLink = ({
 const MobileNavLink = ({
   to,
   label,
+  icon,
   onClick,
 }: {
   to: string;
   label: string;
+  icon?: React.ReactNode;
   onClick: () => void;
 }) => (
   <li>
@@ -462,6 +476,7 @@ const MobileNavLink = ({
       className="text-xl font-display text-white hover:text-red-400 transition-colors flex items-center"
       onClick={onClick}
     >
+      {icon && icon}
       {label}
       <motion.span
         initial={{ x: -8, opacity: 0 }}

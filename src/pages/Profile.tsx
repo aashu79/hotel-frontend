@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import useAuthStore from "../store/authStore";
+import { useUserProfile } from "../hooks/useUserProfile";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -18,10 +19,15 @@ const Profile = () => {
   const { logout: authLogout } = useAuthStore();
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  const user = {
-    name: "Alex Johnson",
-    phoneNumber: "+1 234 567 8900",
-  };
+  // Fetch user profile from API
+  const {
+    data: fetchedUser,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useUserProfile();
+  const user = fetchedUser?.user;
 
   const actions = [
     {
@@ -59,6 +65,32 @@ const Profile = () => {
     navigate("/");
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <span className="text-white text-xl animate-pulse">
+          Loading profile...
+        </span>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black">
+        <span className="text-red-500 text-xl mb-4">
+          Failed to load profile.
+        </span>
+        <button
+          onClick={() => refetch()}
+          className="px-6 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-lg font-bold hover:from-red-600 hover:to-orange-600 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black pt-32 pb-12 px-4 md:px-8">
       <div className="max-w-6xl mx-auto">
@@ -92,10 +124,10 @@ const Profile = () => {
                   <User size={80} className="text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-white text-center mb-2">
-                  {user.name}
+                  {user?.name || "-"}
                 </h2>
                 <p className="text-gray-500 text-center text-sm">
-                  {user.phoneNumber}
+                  {user?.phoneNumber || user?.phone || "-"}
                 </p>
               </div>
             </div>
@@ -125,14 +157,14 @@ const Profile = () => {
                 <div className="group cursor-pointer">
                   <p className="text-gray-500 text-sm mb-1">Full Name</p>
                   <p className="text-white text-lg font-semibold group-hover:text-red-400 transition-colors">
-                    {user.name}
+                    {user?.name || "-"}
                   </p>
                   <div className="h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-red-500/30 transition-colors mt-2"></div>
                 </div>
                 <div className="group cursor-pointer mt-6">
                   <p className="text-gray-500 text-sm mb-1">Phone Number</p>
                   <p className="text-white text-lg font-semibold group-hover:text-red-400 transition-colors">
-                    {user.phoneNumber}
+                    {user?.phoneNumber || user?.phone || "-"}
                   </p>
                   <div className="h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-red-500/30 transition-colors mt-2"></div>
                 </div>
