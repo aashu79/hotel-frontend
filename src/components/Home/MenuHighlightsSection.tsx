@@ -16,7 +16,7 @@ const MenuHighlightsSection: React.FC = () => {
   const { user } = useAuthStore();
   const { dispatch } = useCart();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [allMenuItems, setAllMenuItems] = useState<typeof menuItems>([]);
+  // Remove allMenuItems state, use menu directly
   const [menuCategories, setMenuCategories] = useState<
     { id: number; name: string }[]
   >([]);
@@ -26,21 +26,11 @@ const MenuHighlightsSection: React.FC = () => {
   const { data: menu = [], isLoading: itemsLoading } = useMenuItems({
     isAvailable: true,
   });
-  const { data: categories = [], isLoading: categoriesLoading } =
-    useMenuCategories();
 
-  useEffect(() => {
-    setAllMenuItems(menu?.data || []);
-  }, [itemsLoading, menu]);
+  const isLoading = itemsLoading;
 
-  useEffect(() => {
-    setMenuCategories(categories?.data || []);
-  }, [categoriesLoading, categories]);
-
-  const isLoading = itemsLoading || categoriesLoading;
-
-  // Filter for popular items
-  const menuItems = allMenuItems;
+  // Use menu directly as menuItems
+  const menuItems = Array.isArray(menu) ? menu : menu?.data || [];
 
   const getItemQuantity = (itemId: string) => quantities[itemId] || 1;
 
