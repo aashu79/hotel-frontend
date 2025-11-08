@@ -207,7 +207,7 @@ const Checkout: React.FC = () => {
 
         // Step 2: Create Stripe checkout session with all required data
         const checkoutSessionData = {
-          // orderId: createdOrder.id,
+          orderId: createdOrder.id,
           items: state.items.map((item) => ({
             id: item.id,
             name: item.name,
