@@ -12,6 +12,7 @@ import {
   TagsOutlined,
   UnorderedListOutlined,
   EnvironmentOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 import { Utensils } from "lucide-react";
 import useAuthStore from "../store/authStore";
@@ -84,6 +85,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             icon: <ShoppingOutlined />,
             label: "Delivery Services",
             onClick: () => navigate("/admin/delivery-services"),
+          },
+          {
+            key: "tax-service-rates",
+            icon: <DollarOutlined />,
+            label: "Tax & Service Rates",
+            onClick: () => navigate("/admin/tax-service-rates"),
           },
         ]
       : []),

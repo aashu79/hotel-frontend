@@ -11,14 +11,17 @@ import {
   Calendar,
   Hash,
   UtensilsCrossed,
+  CreditCard,
+  AlertCircle,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useMyOrders } from "@/hooks/useOrders";
-import { OrderStatus } from "@/services/orders";
+import { OrderStatus, Order } from "@/services/orders";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRepayment } from "@/hooks/usePayment";
 
 import { ChefHat, CheckCheck, RotateCw } from "lucide-react";
 
@@ -97,6 +100,7 @@ const MyOrders: React.FC = () => {
   const [refreshIn, setRefreshIn] = useState(REFRESH_INTERVAL);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
+  const repayment = useRepayment();
 
   // Countdown timer for next auto-refresh
   useEffect(() => {
@@ -127,6 +131,31 @@ const MyOrders: React.FC = () => {
       hour: "2-digit",
       minute: "2-digit",
     }).format(date);
+  };
+
+  const handleRepayment = async (order: Order) => {
+    try {
+      // Map order items to the format expected by the API
+      const items = order.items.map((item) => ({
+        id: item.menuItemId,
+        name: item.menuItem?.name || `Item ${item.menuItemId.slice(0, 8)}`,
+        price: item.menuItem?.price || order.totalAmount / order.items.length,
+        quantity: item.quantity,
+      }));
+
+      await repayment.mutateAsync({
+        orderId: order.id,
+        items,
+        currency: "usd",
+        userId: order.userId,
+        locationId: order.locationId || "",
+        tableNumber: order.tableNumber,
+        specialInstructions: order.specialInstructions,
+      });
+      // Redirect happens automatically in the hook
+    } catch (error) {
+      console.error("Repayment failed:", error);
+    }
   };
 
   if (isLoading) {
@@ -348,7 +377,7 @@ const MyOrders: React.FC = () => {
 
                         {/* Order Details */}
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
+                          <div className="flex items-center gap-3 mb-3 flex-wrap">
                             <h3 className="text-2xl font-bold text-white">
                               Order #{order.id.slice(0, 8).toUpperCase()}
                             </h3>
@@ -357,7 +386,48 @@ const MyOrders: React.FC = () => {
                             >
                               {config.label}
                             </Badge>
+                            {/* Payment Status Badge */}
+                            {order.paid !== undefined && (
+                              <Badge
+                                className={`${
+                                  order.paid
+                                    ? "bg-green-500/20 text-green-300 border-green-500/30"
+                                    : "bg-red-500/20 text-red-300 border-red-500/30"
+                                } border px-3 py-1 font-semibold`}
+                              >
+                                {order.paid ? "Paid" : "Unpaid"}
+                              </Badge>
+                            )}
                           </div>
+
+                          {/* Unpaid Order Alert */}
+                          {!order.paid && order.status !== "CANCELLED" && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-5 h-5 text-red-400" />
+                                <span className="text-red-300 font-medium">
+                                  Payment Required
+                                </span>
+                              </div>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRepayment(order);
+                                }}
+                                disabled={repayment.isPending}
+                                className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white px-4 py-2 text-sm rounded-lg"
+                              >
+                                <CreditCard className="w-4 h-4 mr-2" />
+                                {repayment.isPending
+                                  ? "Processing..."
+                                  : "Pay Now"}
+                              </Button>
+                            </motion.div>
+                          )}
 
                           {/* Info Grid */}
                           <div className="grid grid-cols-3 gap-4 mt-4">

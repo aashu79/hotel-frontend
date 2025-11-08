@@ -8,6 +8,7 @@ import {
   Loader2,
   MapPin,
   ExternalLink,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,8 +18,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
 import { useCreateOrder } from "@/hooks/useOrders";
+import { useCreateCheckoutSession } from "@/hooks/usePayment";
+import { useTaxServiceRates } from "@/hooks/useTaxServiceRates";
 import useAuthStore from "@/store/authStore";
-import { message, Select, Spin, Divider } from "antd";
+import { message, Select, Spin, Divider, Radio } from "antd";
 import useLocationStore from "../store/locationStore";
 import deliveryServiceService, {
   DeliveryService,
@@ -29,6 +32,9 @@ const Checkout: React.FC = () => {
   const { state, dispatch, selectedLocationId, setSelectedLocationId } =
     useCart();
   const createOrder = useCreateOrder();
+  const createCheckoutSession = useCreateCheckoutSession();
+  const { data: taxServiceRates, isLoading: loadingRates } =
+    useTaxServiceRates();
   const [activeLocations, setActiveLocations] = useState([]);
   const { user } = useAuthStore();
   const {
@@ -36,10 +42,15 @@ const Checkout: React.FC = () => {
     fetchActiveLocations,
     loading,
   } = useLocationStore();
+  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "cod">(
+    "stripe"
+  );
+  const [calculatedTax, setCalculatedTax] = useState(0);
+  const [calculatedService, setCalculatedService] = useState(0);
 
   useEffect(() => {
-    if (locations.locations) {
-      setActiveLocations(locations?.locations);
+    if (Array.isArray(locations)) {
+      setActiveLocations(locations);
     }
   }, [locations]);
 
@@ -60,6 +71,7 @@ const Checkout: React.FC = () => {
   // Initialize with selected location from cart context (from Menu page)
   useEffect(() => {
     fetchActiveLocations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch delivery services when location changes
@@ -98,6 +110,37 @@ const Checkout: React.FC = () => {
     }
   };
 
+  // Calculate tax and service charges based on active rates
+  useEffect(() => {
+    if (taxServiceRates && taxServiceRates.length > 0) {
+      const subtotal = state.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+      let totalTax = 0;
+      let totalService = 0;
+
+      taxServiceRates
+        .filter((rate) => rate.isActive)
+        .forEach((rate) => {
+          const amount = subtotal * rate.rate;
+          // Categorize by name (customize based on your needs)
+          if (
+            rate.name.toLowerCase().includes("tax") ||
+            rate.name.toLowerCase().includes("gst") ||
+            rate.name.toLowerCase().includes("vat")
+          ) {
+            totalTax += amount;
+          } else {
+            totalService += amount;
+          }
+        });
+
+      setCalculatedTax(totalTax);
+      setCalculatedService(totalService);
+    }
+  }, [taxServiceRates, state.items]);
+
   const validateForm = () => {
     // No validation needed since all fields are optional now
     return true;
@@ -125,12 +168,14 @@ const Checkout: React.FC = () => {
     }
 
     try {
-      // Calculate total amount from cart
-      const totalAmount = state.items.reduce(
+      // Calculate total amount
+      const subtotal = state.items.reduce(
         (sum, item) => sum + item.price * item.quantity,
         0
       );
+      const totalAmount = subtotal + calculatedTax + calculatedService;
 
+      // Create order data
       const orderData = {
         userId: user.id.toString(),
         totalAmount: totalAmount,
@@ -142,24 +187,57 @@ const Checkout: React.FC = () => {
           menuItemId: item.id.toString(),
           quantity: item.quantity,
         })),
-        locationId: selectedLocationId, // Include location
+        locationId: selectedLocationId,
       };
 
-      await createOrder.mutateAsync(orderData);
+      if (paymentMethod === "stripe") {
+        // Step 1: Create order with paid: false
+        const createdOrderResponse = await createOrder.mutateAsync(orderData);
 
-      // Clear cart after successful order
-      dispatch({ type: "CLEAR_CART" });
+        // Extract order from response (backend returns {success, message, order})
+        const createdOrder =
+          (createdOrderResponse as { order?: { id: string } }).order ||
+          createdOrderResponse;
 
-      // Show success message
-      message.success("Order placed successfully!");
+        // Validate we have items
+        if (!state.items || state.items.length === 0) {
+          message.error("No items in cart");
+          return;
+        }
 
-      // Navigate to my orders page
-      setTimeout(() => {
-        navigate("/my-orders");
-      }, 1000);
+        // Step 2: Create Stripe checkout session with all required data
+        const checkoutSessionData = {
+          // orderId: createdOrder.id,
+          items: state.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+          currency: "usd",
+          userId: user.id.toString(),
+          locationId: selectedLocationId,
+          tableNumber: formData.tableNumber
+            ? parseInt(formData.tableNumber)
+            : undefined,
+          specialInstructions: formData.specialInstructions || undefined,
+        };
+
+        await createCheckoutSession.mutateAsync(checkoutSessionData);
+        // The useCreateCheckoutSession hook will redirect to Stripe
+        // Don't clear cart yet - will clear after successful payment verification
+      } else {
+        // Cash on Delivery - order created with paid: false, just clear cart and navigate
+        await createOrder.mutateAsync(orderData);
+        dispatch({ type: "CLEAR_CART" });
+        message.success("Order placed successfully! Pay on delivery.");
+        setTimeout(() => {
+          navigate("/my-orders");
+        }, 1000);
+      }
     } catch (error) {
-      console.error("Failed to place order:", error);
-      message.error("Failed to place order. Please try again.");
+      console.error("Failed to process order:", error);
+      message.error("Failed to process order. Please try again.");
     }
   };
 
@@ -197,8 +275,7 @@ const Checkout: React.FC = () => {
   }
 
   const subtotal = state.total;
-  const tax = subtotal * 0.1; // 10% tax
-  const total = subtotal + tax;
+  const total = subtotal + calculatedTax + calculatedService;
 
   const selectedLocation = activeLocations.find(
     (loc) => loc.id === selectedLocationId
@@ -398,10 +475,41 @@ const Checkout: React.FC = () => {
                   <span>Subtotal</span>
                   <span className="font-semibold">${subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-gray-300">
-                  <span>Tax (10%)</span>
-                  <span className="font-semibold">${tax.toFixed(2)}</span>
-                </div>
+
+                {loadingRates ? (
+                  <div className="flex justify-center py-2">
+                    <Spin size="small" />
+                  </div>
+                ) : (
+                  <>
+                    {taxServiceRates && taxServiceRates.length > 0 ? (
+                      taxServiceRates
+                        .filter((rate) => rate.isActive)
+                        .map((rate) => {
+                          const amount = subtotal * rate.rate;
+                          return (
+                            <div
+                              key={rate.id}
+                              className="flex justify-between text-gray-300"
+                            >
+                              <span>
+                                {rate.name} ({(rate.rate * 100).toFixed(2)}%)
+                              </span>
+                              <span className="font-semibold">
+                                ${amount.toFixed(2)}
+                              </span>
+                            </div>
+                          );
+                        })
+                    ) : (
+                      <div className="flex justify-between text-gray-300">
+                        <span>Tax & Service</span>
+                        <span className="font-semibold">$0.00</span>
+                      </div>
+                    )}
+                  </>
+                )}
+
                 <Separator className="bg-gray-800" />
                 <div className="flex justify-between text-white text-xl font-bold">
                   <span>Total</span>
@@ -409,22 +517,64 @@ const Checkout: React.FC = () => {
                 </div>
               </div>
 
+              {/* Payment Method Selection */}
+              <div className="mb-6 space-y-3">
+                <Label className="text-white font-semibold">
+                  Payment Method
+                </Label>
+                <Radio.Group
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full"
+                >
+                  <div className="space-y-2">
+                    {/* <Radio value="cod" className="w-full">
+                      <div className="flex items-center gap-2 text-white">
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Cash on Delivery</span>
+                      </div>
+                    </Radio> */}
+                    <Radio value="stripe" className="w-full">
+                      <div className="flex items-center gap-2 text-white">
+                        <CreditCard className="w-4 h-4" />
+                        <span>Pay with Stripe (Card/UPI)</span>
+                      </div>
+                    </Radio>
+                  </div>
+                </Radio.Group>
+              </div>
+
               {/* Action Buttons */}
               <div className="space-y-3">
                 <Button
                   onClick={handlePlaceOrder}
-                  disabled={createOrder.isPending || !selectedLocationId}
+                  disabled={
+                    createOrder.isPending ||
+                    createCheckoutSession.isPending ||
+                    !selectedLocationId
+                  }
                   className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white py-6 rounded-xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {createOrder.isPending ? (
+                  {createOrder.isPending || createCheckoutSession.isPending ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Placing Order...
+                      {paymentMethod === "stripe"
+                        ? "Processing Payment..."
+                        : "Placing Order..."}
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Place Order
+                      {paymentMethod === "stripe" ? (
+                        <>
+                          <CreditCard className="w-5 h-5 mr-2" />
+                          Pay ${total.toFixed(2)} with Stripe
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          Place Order (COD)
+                        </>
+                      )}
                     </>
                   )}
                 </Button>
@@ -436,7 +586,9 @@ const Checkout: React.FC = () => {
                 <Button
                   onClick={handleBackToBill}
                   variant="outline"
-                  disabled={createOrder.isPending}
+                  disabled={
+                    createOrder.isPending || createCheckoutSession.isPending
+                  }
                   className="w-full border-gray-700 hover:bg-gray-800 hover:border-red-500/30 text-white py-6 rounded-xl text-lg"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />

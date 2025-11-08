@@ -55,6 +55,7 @@ interface OrderData {
   orderNumber: string;
   totalAmount: number;
   status: OrderStatus;
+  paid: boolean;
   specialNotes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -114,8 +115,9 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
               <TableHead className="text-slate-300">Order #</TableHead>
               <TableHead className="text-slate-300">Customer</TableHead>
               <TableHead className="text-slate-300">Phone</TableHead>
-              <TableHead className="text-slate-300">Items Summary</TableHead>
+              <TableHead className="text-slate-300">Items</TableHead>
               <TableHead className="text-slate-300">Total</TableHead>
+              <TableHead className="text-slate-300">Payment</TableHead>
               <TableHead className="text-slate-300">Date</TableHead>
               <TableHead className="text-slate-300">Status</TableHead>
               <TableHead></TableHead>
@@ -171,6 +173,7 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
               <TableHead className="text-slate-300">Phone</TableHead>
               <TableHead className="text-slate-300">Items</TableHead>
               <TableHead className="text-slate-300">Total</TableHead>
+              <TableHead className="text-slate-300">Payment</TableHead>
               <TableHead className="text-slate-300">Date</TableHead>
               <TableHead className="text-slate-300">Status</TableHead>
               <TableHead></TableHead>
@@ -179,7 +182,7 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
           <TableBody>
             <TableRow>
               <TableCell
-                colSpan={9}
+                colSpan={10}
                 className="text-center py-12 text-slate-400"
               >
                 <Package className="w-12 h-12 mx-auto mb-3 text-slate-600" />
@@ -206,8 +209,9 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
             <TableHead className="text-slate-300">Order #</TableHead>
             <TableHead className="text-slate-300">Customer</TableHead>
             <TableHead className="text-slate-300">Phone</TableHead>
-            <TableHead className="text-slate-300">Items</TableHead>
+            <TableHead className="text-slate-300">Items Summary</TableHead>
             <TableHead className="text-slate-300">Total</TableHead>
+            <TableHead className="text-slate-300">Payment</TableHead>
             <TableHead className="text-slate-300">Date</TableHead>
             <TableHead className="text-slate-300">Status</TableHead>
             <TableHead></TableHead>
@@ -271,6 +275,17 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
                   </TableCell>
                   <TableCell className="text-slate-200 font-semibold">
                     ${order.totalAmount.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      className={`${
+                        order.paid
+                          ? "bg-green-500/20 text-green-300 border-green-500/30"
+                          : "bg-red-500/20 text-red-300 border-red-500/30"
+                      } border`}
+                    >
+                      {order.paid ? "Paid" : "Unpaid"}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-slate-400 text-sm">
                     {formatDate(order.createdAt)}
@@ -360,7 +375,7 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
                 <AnimatePresence>
                   {isExpanded && (
                     <TableRow className="border-slate-800">
-                      <TableCell colSpan={9} className="p-0 bg-slate-800/30">
+                      <TableCell colSpan={10} className="p-0 bg-slate-800/30">
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}

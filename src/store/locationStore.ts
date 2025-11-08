@@ -40,7 +40,7 @@ const useLocationStore = create<LocationState>((set) => ({
     set({ loading: true, error: null });
     try {
       const activeLocations = await locationService.getAllLocations(true);
-      set({ activeLocations, loading: false });
+      set({ activeLocations: activeLocations?.locations, loading: false });
     } catch (error: any) {
       set({
         error:

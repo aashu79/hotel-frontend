@@ -30,10 +30,13 @@ import MenuItemManagement from "./pages/MenuItemManagement";
 import RestaurantSettings from "./pages/RestaurantSettings";
 import Unauthorized from "./pages/Unauthorized";
 import OrderBill from "./pages/OrderBill";
-import Checkout from "./pages/Checkout";
 import MyOrders from "./pages/MyOrders";
 import LocationManagement from "./pages/admin/LocationManagement";
 import DeliveryServiceManagement from "./pages/admin/DeliveryServiceManagement";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
+import TaxServiceRateManagement from "./pages/TaxServiceRateManagement";
+import Checkout from "./pages/Checkout";
 
 // Create a QueryClient instance
 const queryClient = new QueryClient();
@@ -107,6 +110,10 @@ function App() {
                     path="/admin/delivery-services"
                     element={<DeliveryServiceManagement />}
                   />
+                  <Route
+                    path="/admin/tax-service-rates"
+                    element={<TaxServiceRateManagement />}
+                  />
                 </Route>
 
                 {/* Staff Login */}
@@ -126,6 +133,14 @@ function App() {
                           <Route path="/menu" element={<Menu />} />
                           <Route path="/signin" element={<SignIn />} />
                           <Route path="/signup" element={<SignUp />} />
+                          <Route
+                            path="/payment-success"
+                            element={<PaymentSuccess />}
+                          />
+                          <Route
+                            path="/payment-cancel"
+                            element={<PaymentCancel />}
+                          />
 
                           {/* Customer Protected Routes */}
                           <Route element={<ProtectedRoute />}>

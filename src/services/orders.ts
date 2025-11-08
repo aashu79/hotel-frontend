@@ -13,15 +13,26 @@ export type OrderStatus =
 export interface OrderItem {
   menuItemId: string;
   quantity: number;
+  menuItem?: {
+    id: string;
+    name: string;
+    price: number;
+  };
 }
 
 // Order Interface
 export interface Order {
   id: string;
   userId: string;
+  locationId?: string;
   items: OrderItem[];
   tableNumber?: number;
+  specialInstructions?: string;
   status: OrderStatus;
+  paid: boolean;
+  paymentMethod?: string;
+  totalAmount: number;
+  orderNumber?: string;
   createdAt: string;
   updatedAt: string;
 }

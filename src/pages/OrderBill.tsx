@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,10 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
+import { useTaxServiceRates } from "@/hooks/useTaxServiceRates";
+import { Spin } from "antd";
 
 const OrderBill: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useCart();
+  const { data: taxServiceRates, isLoading: loadingRates } =
+    useTaxServiceRates();
+  const [calculatedTax, setCalculatedTax] = useState(0);
+  const [calculatedService, setCalculatedService] = useState(0);
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
@@ -40,6 +46,34 @@ const OrderBill: React.FC = () => {
   const handleProceedToCheckout = () => {
     navigate("/checkout");
   };
+
+  // Calculate tax and service charges based on active rates
+  useEffect(() => {
+    if (taxServiceRates && taxServiceRates.length > 0) {
+      const subtotal = state.total;
+      let totalTax = 0;
+      let totalService = 0;
+
+      taxServiceRates
+        .filter((rate) => rate.isActive)
+        .forEach((rate) => {
+          const amount = subtotal * rate.rate;
+          // Categorize by name (customize based on your needs)
+          if (
+            rate.name.toLowerCase().includes("tax") ||
+            rate.name.toLowerCase().includes("gst") ||
+            rate.name.toLowerCase().includes("vat")
+          ) {
+            totalTax += amount;
+          } else {
+            totalService += amount;
+          }
+        });
+
+      setCalculatedTax(totalTax);
+      setCalculatedService(totalService);
+    }
+  }, [taxServiceRates, state.total]);
 
   if (state.items.length === 0) {
     return (
@@ -71,8 +105,7 @@ const OrderBill: React.FC = () => {
   }
 
   const subtotal = state.total;
-  const tax = subtotal * 0.1; // 10% tax
-  const total = subtotal + tax;
+  const total = subtotal + calculatedTax + calculatedService;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black pt-24 pb-12 px-4">
@@ -195,10 +228,41 @@ const OrderBill: React.FC = () => {
                       ${subtotal.toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-gray-300">
-                    <span>Tax (10%)</span>
-                    <span className="font-semibold">${tax.toFixed(2)}</span>
-                  </div>
+
+                  {loadingRates ? (
+                    <div className="flex justify-center py-2">
+                      <Spin size="small" />
+                    </div>
+                  ) : (
+                    <>
+                      {taxServiceRates && taxServiceRates.length > 0 ? (
+                        taxServiceRates
+                          .filter((rate) => rate.isActive)
+                          .map((rate) => {
+                            const amount = subtotal * rate.rate;
+                            return (
+                              <div
+                                key={rate.id}
+                                className="flex justify-between text-gray-300"
+                              >
+                                <span>
+                                  {rate.name} ({(rate.rate * 100).toFixed(2)}%)
+                                </span>
+                                <span className="font-semibold">
+                                  ${amount.toFixed(2)}
+                                </span>
+                              </div>
+                            );
+                          })
+                      ) : (
+                        <div className="flex justify-between text-gray-300">
+                          <span>Tax & Service</span>
+                          <span className="font-semibold">$0.00</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
                   <Separator className="bg-gray-800" />
                   <div className="flex justify-between text-white text-xl font-bold">
                     <span>Total</span>

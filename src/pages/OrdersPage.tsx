@@ -36,6 +36,9 @@ const OrdersPage = () => {
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "ALL">(
     "ALL"
   );
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<
+    "ALL" | "PAID" | "UNPAID"
+  >("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Get order counts by status
@@ -69,13 +72,17 @@ const OrdersPage = () => {
     orders?.filter((order) => {
       const matchesStatus =
         selectedStatus === "ALL" || order.status === selectedStatus;
+      const matchesPayment =
+        selectedPaymentStatus === "ALL" ||
+        (selectedPaymentStatus === "PAID" && order.paid) ||
+        (selectedPaymentStatus === "UNPAID" && !order.paid);
       const matchesSearch =
         order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.user?.phoneNumber.includes(searchQuery);
 
-      return matchesStatus && matchesSearch;
+      return matchesStatus && matchesPayment && matchesSearch;
     }) || [];
 
   // Update order status
@@ -188,26 +195,88 @@ const OrdersPage = () => {
           isLoading={isLoading}
         />
 
-        {/* Search Bar */}
+        {/* Search Bar and Filters */}
         <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search by Order #, Name, Phone..."
-              className="pl-10 bg-slate-900/50 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-orange-500 focus:ring-orange-500/20"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search by Order #, Name, Phone..."
+                className="pl-10 bg-slate-900/50 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-orange-500 focus:ring-orange-500/20"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Payment Filter */}
+            <div className="flex gap-2">
+              <Button
+                variant={
+                  selectedPaymentStatus === "ALL" ? "default" : "outline"
+                }
+                size="sm"
+                onClick={() => setSelectedPaymentStatus("ALL")}
+                className={
+                  selectedPaymentStatus === "ALL"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "border-slate-700 bg-slate-900/50 hover:bg-slate-800/50 text-slate-300"
+                }
+              >
+                All Payments
+              </Button>
+              <Button
+                variant={
+                  selectedPaymentStatus === "PAID" ? "default" : "outline"
+                }
+                size="sm"
+                onClick={() => setSelectedPaymentStatus("PAID")}
+                className={
+                  selectedPaymentStatus === "PAID"
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "border-slate-700 bg-slate-900/50 hover:bg-slate-800/50 text-slate-300"
+                }
+              >
+                Paid
+              </Button>
+              <Button
+                variant={
+                  selectedPaymentStatus === "UNPAID" ? "default" : "outline"
+                }
+                size="sm"
+                onClick={() => setSelectedPaymentStatus("UNPAID")}
+                className={
+                  selectedPaymentStatus === "UNPAID"
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "border-slate-700 bg-slate-900/50 hover:bg-slate-800/50 text-slate-300"
+                }
+              >
+                Unpaid
+              </Button>
+            </div>
           </div>
 
-          {selectedStatus !== "ALL" && (
-            <Badge
-              variant="outline"
-              className="border-orange-500/50 text-orange-400"
-            >
-              Showing {selectedStatus} orders
-            </Badge>
-          )}
+          <div className="flex gap-2">
+            {selectedStatus !== "ALL" && (
+              <Badge
+                variant="outline"
+                className="border-orange-500/50 text-orange-400"
+              >
+                {selectedStatus}
+              </Badge>
+            )}
+            {selectedPaymentStatus !== "ALL" && (
+              <Badge
+                variant="outline"
+                className={
+                  selectedPaymentStatus === "PAID"
+                    ? "border-green-500/50 text-green-400"
+                    : "border-red-500/50 text-red-400"
+                }
+              >
+                {selectedPaymentStatus}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Orders Table */}
