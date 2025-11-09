@@ -27,6 +27,7 @@ const MenuItemManagement = () => {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [imageFile, setImageFile] = useState<UploadFile | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
 
   // React Query hooks
   const { data: menuItems = [], isLoading: itemsLoading } = useMenuItems();
@@ -45,6 +46,7 @@ const MenuItemManagement = () => {
     setEditingItem(item ?? null);
     if (item?.imageUrl) {
       setImagePreview(item.imageUrl);
+      setOriginalImageUrl(item.imageUrl);
     }
     setIsModalOpen(true);
   };
@@ -54,6 +56,7 @@ const MenuItemManagement = () => {
     setEditingItem(null);
     setImageFile(null);
     setImagePreview(null);
+    setOriginalImageUrl(null);
   };
 
   const handleDelete = async (id: number) => {
@@ -88,8 +91,14 @@ const MenuItemManagement = () => {
           formData.append(key, value as string | Blob);
         }
       });
+
+      // Handle image upload/removal
       if (imageFile?.originFileObj) {
+        // New image uploaded
         formData.append("image", imageFile.originFileObj);
+      } else if (editingItem && originalImageUrl && !imagePreview) {
+        // Image was deleted (original existed, but preview is now null)
+        formData.append("removeImage", "true");
       }
 
       if (editingItem) {

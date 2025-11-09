@@ -12,7 +12,11 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { UploadOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import {
+  UploadOutlined,
+  InfoCircleOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { MenuItemFormData, MenuCategory } from "./types";
 import RichTextEditor from "./RichTextEditor";
@@ -237,53 +241,107 @@ const ItemForm = ({
           icon: <InfoCircleOutlined />,
         }}
       >
-        <Upload
-          listType="picture-card"
-          maxCount={1}
-          fileList={imageFile ? [imageFile] : []}
-          beforeUpload={(file) => {
-            const isImage = file.type.startsWith("image/");
-            if (!isImage) {
-              message.error("You can only upload image files!");
-              return false;
-            }
-            const isLt5M = file.size / 1024 / 1024 < 5;
-            if (!isLt5M) {
-              message.error("Image must be smaller than 5MB!");
-              return false;
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              setImagePreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-            setImageFile({
-              uid: file.uid,
-              name: file.name,
-              status: "done",
-              url: "",
-              originFileObj: file,
-            });
-            return false;
-          }}
-          onRemove={() => {
-            setImageFile(null);
-            setImagePreview("");
-          }}
-        >
-          {!imageFile && !imagePreview && (
-            <div>
-              <UploadOutlined />
-              <div style={{ marginTop: 8 }}>Upload</div>
+        {imagePreview && !imageFile ? (
+          // Show existing image with delete option
+          <div>
+            <div
+              style={{
+                position: "relative",
+                display: "inline-block",
+                border: "1px solid #d9d9d9",
+                borderRadius: "8px",
+                padding: "8px",
+                background: "#fafafa",
+              }}
+            >
+              <img
+                src={imagePreview}
+                alt="Current item"
+                style={{
+                  maxWidth: "200px",
+                  maxHeight: "200px",
+                  borderRadius: "4px",
+                  display: "block",
+                }}
+              />
             </div>
-          )}
-        </Upload>
-        {imagePreview && !imageFile && (
-          <img
-            src={imagePreview}
-            alt="Current"
-            style={{ maxWidth: "200px", marginTop: "8px", borderRadius: "8px" }}
-          />
+            <div
+              style={{
+                marginTop: "12px",
+                display: "flex",
+                gap: "8px",
+                alignItems: "center",
+              }}
+            >
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => {
+                  setImagePreview(null);
+                  message.success(
+                    "Image removed. Upload a new one or save without an image."
+                  );
+                }}
+              >
+                Remove Image
+              </Button>
+              <span style={{ fontSize: "12px", color: "#8c8c8c" }}>
+                Click to remove and upload a new image
+              </span>
+            </div>
+          </div>
+        ) : (
+          // Show upload component
+          <div>
+            <Upload
+              listType="picture-card"
+              maxCount={1}
+              fileList={imageFile ? [imageFile] : []}
+              beforeUpload={(file) => {
+                const isImage = file.type.startsWith("image/");
+                if (!isImage) {
+                  message.error("You can only upload image files!");
+                  return false;
+                }
+                const isLt5M = file.size / 1024 / 1024 < 5;
+                if (!isLt5M) {
+                  message.error("Image must be smaller than 5MB!");
+                  return false;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  setImagePreview(e.target?.result as string);
+                };
+                reader.readAsDataURL(file);
+                setImageFile({
+                  uid: file.uid,
+                  name: file.name,
+                  status: "done",
+                  url: "",
+                  originFileObj: file,
+                });
+                return false;
+              }}
+              onRemove={() => {
+                setImageFile(null);
+                setImagePreview(null);
+              }}
+            >
+              {!imageFile && (
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
+            {!imageFile && (
+              <div
+                style={{ marginTop: "8px", fontSize: "12px", color: "#8c8c8c" }}
+              >
+                Click or drag image to upload
+              </div>
+            )}
+          </div>
         )}
       </Form.Item>
       <Divider orientation="left">Item Status</Divider>

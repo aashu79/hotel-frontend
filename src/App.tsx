@@ -37,6 +37,9 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import TaxServiceRateManagement from "./pages/TaxServiceRateManagement";
 import Checkout from "./pages/Checkout";
+import PaymentsManagement from "./pages/admin/PaymentsManagement";
+import SalesManagement from "./pages/admin/SalesManagement";
+import AnalyticsDashboard from "./pages/admin/AnalyticsDashboard";
 
 // Create a QueryClient instance
 const queryClient = new QueryClient();
@@ -113,6 +116,15 @@ function App() {
                   <Route
                     path="/admin/tax-service-rates"
                     element={<TaxServiceRateManagement />}
+                  />
+                  <Route
+                    path="/admin/payments"
+                    element={<PaymentsManagement />}
+                  />
+                  <Route path="/admin/sales" element={<SalesManagement />} />
+                  <Route
+                    path="/admin/analytics"
+                    element={<AnalyticsDashboard />}
                   />
                 </Route>
 

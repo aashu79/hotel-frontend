@@ -9,6 +9,8 @@ import {
   TeamOutlined,
   BarChartOutlined,
   SettingOutlined,
+  CreditCardOutlined,
+  LineChartOutlined,
 } from "@ant-design/icons";
 import DashboardLayout from "../layouts/DashboardLayout";
 import useAuthStore from "../store/authStore";
@@ -295,7 +297,8 @@ const AdminDashboard = () => {
                 <Col xs={24} sm={12} md={8}>
                   <Button
                     block
-                    icon={<BarChartOutlined />}
+                    icon={<LineChartOutlined />}
+                    onClick={() => navigate("/admin/analytics")}
                     style={{
                       background: "#1e293b",
                       border: "1px solid #334155",
@@ -306,6 +309,40 @@ const AdminDashboard = () => {
                     }}
                   >
                     Analytics
+                  </Button>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Button
+                    block
+                    icon={<CreditCardOutlined />}
+                    onClick={() => navigate("/admin/payments")}
+                    style={{
+                      background: "#1e293b",
+                      border: "1px solid #334155",
+                      color: "#cbd5e1",
+                      height: "50px",
+                      borderRadius: "8px",
+                      fontSize: "15px",
+                    }}
+                  >
+                    Payments
+                  </Button>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Button
+                    block
+                    icon={<BarChartOutlined />}
+                    onClick={() => navigate("/admin/sales")}
+                    style={{
+                      background: "#1e293b",
+                      border: "1px solid #334155",
+                      color: "#cbd5e1",
+                      height: "50px",
+                      borderRadius: "8px",
+                      fontSize: "15px",
+                    }}
+                  >
+                    Sales
                   </Button>
                 </Col>
                 <Col xs={24} sm={12} md={8}>

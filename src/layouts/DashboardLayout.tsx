@@ -13,6 +13,9 @@ import {
   UnorderedListOutlined,
   EnvironmentOutlined,
   DollarOutlined,
+  CreditCardOutlined,
+  BarChartOutlined,
+  LineChartOutlined,
 } from "@ant-design/icons";
 import { Utensils } from "lucide-react";
 import useAuthStore from "../store/authStore";
@@ -92,32 +95,52 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             label: "Tax & Service Rates",
             onClick: () => navigate("/admin/tax-service-rates"),
           },
+          {
+            key: "/admin/analytics",
+            icon: <LineChartOutlined />,
+            label: "Analytics Dashboard",
+            onClick: () => {
+              navigate("/admin/analytics");
+              setIsMobileMenuOpen(false);
+            },
+          },
+          {
+            key: "/admin/payments",
+            icon: <CreditCardOutlined />,
+            label: "Payments",
+            onClick: () => {
+              navigate("/admin/payments");
+              setIsMobileMenuOpen(false);
+            },
+          },
+          {
+            key: "/admin/sales",
+            icon: <BarChartOutlined />,
+            label: "Sales",
+            onClick: () => {
+              navigate("/admin/sales");
+              setIsMobileMenuOpen(false);
+            },
+          },
         ]
       : []),
     {
-      key: "menu-section",
-      label: "Menu Management",
-      icon: <AppstoreOutlined />,
-      children: [
-        {
-          key: "/dashboard/menu-categories",
-          icon: <TagsOutlined />,
-          label: "Categories",
-          onClick: () => {
-            navigate("/dashboard/menu-categories");
-            setIsMobileMenuOpen(false);
-          },
-        },
-        {
-          key: "/dashboard/menu-items",
-          icon: <UnorderedListOutlined />,
-          label: "Menu Items",
-          onClick: () => {
-            navigate("/dashboard/menu-items");
-            setIsMobileMenuOpen(false);
-          },
-        },
-      ],
+      key: "/dashboard/menu-categories",
+      icon: <TagsOutlined />,
+      label: "Categories",
+      onClick: () => {
+        navigate("/dashboard/menu-categories");
+        setIsMobileMenuOpen(false);
+      },
+    },
+    {
+      key: "/dashboard/menu-items",
+      icon: <UnorderedListOutlined />,
+      label: "Menu Items",
+      onClick: () => {
+        navigate("/dashboard/menu-items");
+        setIsMobileMenuOpen(false);
+      },
     },
     {
       key: "/dashboard/orders",
@@ -273,6 +296,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           background: "#0f172a",
           borderRight: "1px solid #1e293b",
           display: "none",
+          overflow: "auto",
+          height: "100vh",
+          position: "fixed",
+          left: 0,
+          top: 0,
+          bottom: 0,
         }}
         breakpoint="md"
         collapsedWidth={0}
@@ -296,7 +325,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {sidebarContent}
       </Drawer>
 
-      <Layout style={{ background: "#020617" }}>
+      <Layout
+        style={{ background: "#020617", marginLeft: 0 }}
+        className="main-layout"
+      >
         {/* Mobile Header */}
         <Header
           style={{
@@ -394,6 +426,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         
         .ant-menu-dark .ant-menu-item-selected:hover {
           color: #fb923c !important;
+        }
+        
+        /* Fix sidebar and content layout */
+        @media (min-width: 768px) {
+          .main-layout {
+            margin-left: 256px !important;
+          }
         }
       `}</style>
     </Layout>

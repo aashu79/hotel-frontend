@@ -117,23 +117,23 @@ const OrdersPage = () => {
     return `${minutes}m ago`;
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, [user]);
+  // useEffect(() => {
+  //   fetchOrders();
+  // }, [user]);
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      // If user is STAFF, their locationId will automatically filter orders on backend
-      // If user is ADMIN, they can see all orders or filter by location
-      const data = await orderService.getAllOrders();
-      setOrders(data);
-    } catch (error) {
-      message.error("Failed to fetch orders");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchOrders = async () => {
+  //   setLoading(true);
+  //   try {
+  //     // If user is STAFF, their locationId will automatically filter orders on backend
+  //     // If user is ADMIN, they can see all orders or filter by location
+  //     const data = await orderService.getAllOrders();
+  //     setOrders(data);
+  //   } catch (error) {
+  //     message.error("Failed to fetch orders");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   if (error) {
     return (
