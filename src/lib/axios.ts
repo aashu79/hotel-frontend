@@ -10,7 +10,8 @@ console.log("Axios Token:", token);
 
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_URL || "https://hotel-backend-ky3q.onrender.com",
+    import.meta.env.VITE_API_URL ||
+    "https://whale-app-n83t2.ondigitalocean.app",
   // "http://localhost:3000",
   withCredentials: true,
   headers: {
